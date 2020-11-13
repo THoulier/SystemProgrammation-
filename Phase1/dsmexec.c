@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
       if (fichier != NULL){
          while (fgets(buff, 128, fichier) != NULL){
             num_procs_creat ++;
-            strcpy(tab_machine_name[num_procs_creat],buff,strlen(buff));
+            strcpy(tab_machine_name[num_procs_creat],buff);
             printf("%s\n", buff);
          }
       }
@@ -73,28 +73,28 @@ int main(int argc, char *argv[])
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
       
-      /* creation du tube pour rediriger stdout */
-      
-      /* creation du tube pour rediriger stderr */
-      
-      pid = fork();
-      if(pid == -1) ERROR_EXIT("fork");
-      
-      if (pid == 0) { /* fils */	
+         /* creation du tube pour rediriger stdout */
          
-         /* redirection stdout */	      
+         /* creation du tube pour rediriger stderr */
          
-         /* redirection stderr */	      	      
+         pid = fork();
+         if(pid == -1) ERROR_EXIT("fork");
          
-         /* Creation du tableau d'arguments pour le ssh */ 
-         
-         /* jump to new prog : */
-         /* execvp("ssh",newargv); */
+         if (pid == 0) { /* fils */	
+            
+            /* redirection stdout */	      
+            
+            /* redirection stderr */	      	      
+            
+            /* Creation du tableau d'arguments pour le ssh */ 
+            
+            /* jump to new prog : */
+            /* execvp("ssh",newargv); */
 
-      } else  if(pid > 0) { /* pere */		      
-         /* fermeture des extremites des tubes non utiles */
-         num_procs_creat++;	      
-      }
+         } else  if(pid > 0) { /* pere */		      
+            /* fermeture des extremites des tubes non utiles */
+            num_procs_creat++;	      
+         }
       }
       
       
