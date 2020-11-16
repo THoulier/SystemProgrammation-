@@ -49,15 +49,15 @@ int main(int argc, char *argv[])
       fichier = fopen("machine_file","r");
       if (fichier != NULL){
          while (fgets(buff, 128, fichier) != NULL){
-            num_procs_creat ++;
-            strcpy(tab_machine_name[num_procs_creat],buff);
+            num_procs ++;
+            strcpy(tab_machine_name[num_procs],buff);
             printf("%s\n", buff);
          }
       }
       fclose(fichier);
-      printf("nb de processus à creer : %d\n", num_procs_creat);
-      for (int i=0; i<num_procs_creat; i++){
-         printf("machines : %s\n", tab_machine_name[num_procs_creat]);
+      printf("nb de processus à creer : %d\n", num_procs);
+      for (int i=0; i<num_procs; i++){
+         printf("machines : %s\n", tab_machine_name[num_procs]);
       }
 
       /* 1- on recupere le nombre de processus a lancer */
@@ -71,16 +71,27 @@ int main(int argc, char *argv[])
       /* + ecoute effective */ 
       
       /* creation des fils */
-      for(i = 0; i < num_procs ; i++) {
+      for(i = 0; i < 1 ; i++) {
       
          /* creation du tube pour rediriger stdout */
          
          /* creation du tube pour rediriger stderr */
-         
+         char buffsend[128];
+         memset(buffsend,0,128);
+         int fd_stdout[2];
+
+         pipe(fd_stdout);
+
          pid = fork();
          if(pid == -1) ERROR_EXIT("fork");
          
          if (pid == 0) { /* fils */	
+
+            close(fd_stdout[0]);
+            char * argv_test[] = {"test",NULL}; //tableau argv du programme qu'on va executer avec execv
+            execv("./bin/truc",argv_test);
+            dup2(fd_stdout[1], STDOUT_FILENO);
+            wait(NULL);
             
             /* redirection stdout */	      
             
@@ -93,6 +104,10 @@ int main(int argc, char *argv[])
 
          } else  if(pid > 0) { /* pere */		      
             /* fermeture des extremites des tubes non utiles */
+            close(fd_stdout[1]);
+            read(fd_stdout[0],buffsend,128);
+            write(STDOUT_FILENO,buffsend,strlen(buffsend));
+
             num_procs_creat++;	      
          }
       }
