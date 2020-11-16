@@ -45,8 +45,11 @@ int main(int argc, char *argv[])
       char buff[128];
       memset(buff,0,128);
       char tab_machine_name[3][128];
-
       fichier = fopen("machine_file","r");
+
+
+
+      /* 1- on recupere le nombre de processus a lancer */
       if (fichier != NULL){
          while (fgets(buff, 128, fichier) != NULL){
             num_procs ++;
@@ -56,14 +59,12 @@ int main(int argc, char *argv[])
       }
       fclose(fichier);
       printf("nb de processus à creer : %d\n", num_procs);
+
+
+      /* 2- on recupere les noms des machines : le nom de */
       for (int i=0; i<num_procs; i++){
          printf("machines : %s\n", tab_machine_name[num_procs]);
       }
-
-      /* 1- on recupere le nombre de processus a lancer */
-
-      /* 2- on recupere les noms des machines : le nom de */
-      
 
       /* la machine est un des elements d'identification */
       
@@ -71,36 +72,45 @@ int main(int argc, char *argv[])
       /* + ecoute effective */ 
       
       /* creation des fils */
-      for(i = 0; i < 1 ; i++) {
-      
-         /* creation du tube pour rediriger stdout */
-         
-         /* creation du tube pour rediriger stderr */
-         char buffsend[128];
-         memset(buffsend,0,128);
+      for(i = 0; i < num_procs ; i++) {
+         char buffsend[128], buff_err[128];
+         memset(buffsend,0,128), memset(buff_err,0,128);
          int fd_stdout[2];
-
+         int fd_stderr[2];
+         /* creation du tube pour rediriger stdout */
          pipe(fd_stdout);
+         /* creation du tube pour rediriger stderr */
+         pipe(fd_stderr);
+
+
 
          pid = fork();
          if(pid == -1) ERROR_EXIT("fork");
          
          if (pid == 0) { /* fils */	
 
-            close(fd_stdout[0]);
-            char * argv_test[] = {"test",NULL}; //tableau argv du programme qu'on va executer avec execv
-            execv("./bin/truc",argv_test);
-            dup2(fd_stdout[1], STDOUT_FILENO);
-            wait(NULL);
+
+
             
             /* redirection stdout */	      
             
-            /* redirection stderr */	      	      
+            char * argv_test[] = {"test",NULL}; //tableau argv du programme qu'on va executer avec execv
             
+            
+            close(fd_stdout[0]);
+            dup2(fd_stdout[1], STDOUT_FILENO);
+            /* redirection stderr */	      	      
+            close(fd_stderr[0]);
+            dup2(fd_stderr[1], STDERR_FILENO);
             /* Creation du tableau d'arguments pour le ssh */ 
             
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
+            //execvp("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc", argv_test);            
+            //execv("./bin/truc",argv_test);
+            int err = system("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc");
+            printf("system out %d\n", err);
+            wait(NULL);
 
          } else  if(pid > 0) { /* pere */		      
             /* fermeture des extremites des tubes non utiles */
@@ -108,10 +118,13 @@ int main(int argc, char *argv[])
             read(fd_stdout[0],buffsend,128);
             write(STDOUT_FILENO,buffsend,strlen(buffsend));
 
+            close(fd_stderr[1]);
+            read(fd_stderr[0],buff_err,128);
+            write(STDOUT_FILENO,buff_err,strlen(buff_err));
+
             num_procs_creat++;	      
          }
       }
-      
       
       for(i = 0; i < num_procs ; i++){
       
