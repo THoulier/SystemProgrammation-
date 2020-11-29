@@ -94,8 +94,7 @@ int main(int argc, char *argv[])
             
             /* redirection stdout */	      
             
-            char * argv_test[] = {"test",NULL}; //tableau argv du programme qu'on va executer avec execv
-            
+
             
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
@@ -103,13 +102,19 @@ int main(int argc, char *argv[])
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
             /* Creation du tableau d'arguments pour le ssh */ 
-            
+               char * argv_ssh[4]; //tableau argv du programme qu'on va executer avec execv
+               memset(argv_ssh,0,1024);
+               char path[1024]; 
+               getcwd(path,1024);
+               sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
+               argv_ssh[0] = "rsh";
+               argv_ssh[1] = "localhost";
+               argv_ssh[2] = path;
+               argv_ssh[3] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
-            //execvp("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc", argv_test);            
-            //execv("./bin/truc",argv_test);
-            int err = system("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc");
-            printf("system out %d\n", err);
+            execvp("rsh", argv_ssh);            
+            //int err = system("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc");
             wait(NULL);
 
          } else  if(pid > 0) { /* pere */		      
