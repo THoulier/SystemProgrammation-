@@ -7,7 +7,11 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
 /* autres includes (eventuellement) */
 
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}
@@ -28,4 +32,7 @@ struct dsm_proc {
 };
 typedef struct dsm_proc dsm_proc_t;
 
-int creer_socket(int type, int *port_num);
+int creer_socket(char * adress_ip, int port_num);
+
+int handle_connect(char address_ip[], int portnb);
+

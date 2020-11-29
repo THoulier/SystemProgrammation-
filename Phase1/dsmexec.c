@@ -54,32 +54,38 @@ int main(int argc, char *argv[])
          while (fgets(buff, 128, fichier) != NULL){
             num_procs ++;
             strcpy(tab_machine_name[num_procs],buff);
-            printf("%s\n", buff);
+            //printf("%s\n", buff);
          }
       }
       fclose(fichier);
-      printf("nb de processus à creer : %d\n", num_procs);
+      //printf("nb de processus à creer : %d\n", num_procs);
 
 
       /* 2- on recupere les noms des machines : le nom de */
       for (int i=0; i<num_procs; i++){
-         printf("machines : %s\n", tab_machine_name[num_procs]);
+         //printf("machines : %s\n", tab_machine_name[num_procs]);
       }
 
       /* la machine est un des elements d'identification */
       
       /* creation de la socket d'ecoute */
       /* + ecoute effective */ 
+      int sock_fd = creer_socket("127.0.0.1", 8081);
       
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
+
+         
          char buffsend[128], buff_err[128];
          memset(buffsend,0,128), memset(buff_err,0,128);
-         int fd_stdout[2];
-         int fd_stderr[2];
+         
+         
+
          /* creation du tube pour rediriger stdout */
+         int fd_stdout[2];
          pipe(fd_stdout);
          /* creation du tube pour rediriger stderr */
+         int fd_stderr[2];
          pipe(fd_stderr);
 
 
@@ -107,14 +113,13 @@ int main(int argc, char *argv[])
                char path[1024]; 
                getcwd(path,1024);
                sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
-               argv_ssh[0] = "rsh";
+               argv_ssh[0] = "ssh";
                argv_ssh[1] = "localhost";
                argv_ssh[2] = path;
                argv_ssh[3] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
-            execvp("rsh", argv_ssh);            
-            //int err = system("ssh localhost /home/thomas/Bureau/2A/PR204/pr204-11728/Phase1/bin/truc");
+            execvp("ssh", argv_ssh);            
             wait(NULL);
 
          } else  if(pid > 0) { /* pere */		      
@@ -134,13 +139,21 @@ int main(int argc, char *argv[])
       for(i = 0; i < num_procs ; i++){
       
       /* on accepte les connexions des processus dsm */
-      
+      struct sockaddr_in client_addr;
+      socklen_t size_addr = sizeof(struct sockaddr_in);
+      int client_fd = accept(sock_fd,(struct sockaddr*)&client_addr,&size_addr);
       /*  On recupere le nom de la machine distante */
       /* 1- d'abord la taille de la chaine */
       /* 2- puis la chaine elle-meme */
       
       /* On recupere le pid du processus distant  */
-      
+      char buff_recv[128];
+      memset(buff_recv, 0, 128);
+      if (recv(client_fd, buff_recv, 128, 0) <= 0) {
+			printf("Error while receiving a message\n");
+			break;
+      }
+      printf("%s\n", buff_recv);
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
       }
