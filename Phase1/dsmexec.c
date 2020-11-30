@@ -46,23 +46,23 @@ int main(int argc, char *argv[])
       memset(buff,0,128);
       char tab_machine_name[3][128];
       fichier = fopen("machine_file","r");
-      char buff2[128] = "HEEEE SALUT A TOUTS LES AMIS !!";
-      printf("%s\n",buff2 );
 
 
 
       /* 1- on recupere le nombre de processus a lancer */
       if (fichier != NULL){
          while (fgets(buff, 128, fichier) != NULL){
-            num_procs ++;
-            strcpy(tab_machine_name[num_procs],buff);
             int n = 0;
+            strcpy(tab_machine_name[num_procs],buff);
             while(tab_machine_name[num_procs][n] != '\0'){
               if (tab_machine_name[num_procs][n] == '\n') {
                 tab_machine_name[num_procs][n] = '\0';
             }
             n++;
           }
+            num_procs ++;
+
+
             //printf("%s\n", buff);
          }
       }
@@ -72,8 +72,8 @@ int main(int argc, char *argv[])
 
       /* 2- on recupere les noms des machines : le nom de */
       for (int i=0; i<num_procs; i++){
-         printf("machines : %s\n", tab_machine_name[num_procs]);
-         if (strcmp(tab_machine_name[num_procs],"localhost") == 0){
+         printf("machines : %s\n", tab_machine_name[i]);
+         if (strcmp(tab_machine_name[i],"localhost") == 0){
            printf("On est bon\n");
          }
          else {printf("On est pas bon\n");}
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
 
-        printf("machine name: %s\n",tab_machine_name[i]);
+
          char buffsend[128], buff_err[128];
          memset(buffsend,0,128), memset(buff_err,0,128);
 
@@ -114,7 +114,6 @@ int main(int argc, char *argv[])
             /* redirection stdout */
 
 
-            printf("%s\n",buff2 );
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
             /* redirection stderr */
@@ -127,7 +126,9 @@ int main(int argc, char *argv[])
                getcwd(path,1024);
                sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
                argv_ssh[0] = "ssh";
-               argv_ssh[1] = tab_machine_name[i];
+            //   strcpy(argv_ssh[1] , tab_machine_name[i]);
+                printf("machine name:%s\n",tab_machine_name[i]);
+               argv_ssh[1] = "localhost";
                argv_ssh[2] = path;
                argv_ssh[3] = NULL;
             /* jump to new prog : */
