@@ -1,16 +1,19 @@
 #include "common_impl.h"
 
 int main(int argc, char **argv)
-{   
+{
    /* processus intermediaire pour "nettoyer" */
    /* la liste des arguments qu'on va passer */
    /* a la commande a executer vraiment */
    printf("hello world\n");
    char buffer[128];
    memset(buffer, 0, 128);
+   for (int i = 0; i<argc;i++){
+     printf("argv %i: %s\n",i,argv[i]);
+   }
    /* creation d'une socket pour se connecter au */
    /* au lanceur et envoyer/recevoir les infos */
-   /* necessaires pour la phase dsm_init */   
+   /* necessaires pour la phase dsm_init */
    int sock_fd = handle_connect("127.0.0.1", 8081);
    /* Envoi du nom de machine au lanceur */
    char machine_name[128];

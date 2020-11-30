@@ -122,7 +122,12 @@ int main(int argc, char *argv[])
                argv_ssh[0] = "ssh";
                argv_ssh[1] = tab_machine_name[i];
                argv_ssh[2] = path;
-               argv_ssh[3] = NULL;
+               for (int i = 3; i<argc+2; i++){
+                 argv_ssh[i] = argv[1+i-3];
+                 argv_ssh[i+1] = NULL;
+               }
+
+
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
