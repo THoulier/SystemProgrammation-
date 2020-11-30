@@ -4,7 +4,7 @@
 
 /* un tableau gerant les infos d'identification */
 /* des processus dsm */
-dsm_proc_t *proc_array = NULL; 
+dsm_proc_t *proc_array = NULL;
 
 /* le nombre de processus effectivement crees */
 volatile int num_procs_creat = 0;
@@ -27,12 +27,12 @@ int main(int argc, char *argv[])
 {
    if (argc < 3){
       usage();
-   } else {       
+   } else {
       pid_t pid;
       int num_procs = 0;
       int i;
-      
-      /* Mise en place d'un traitant pour recuperer les fils zombies*/      
+
+      /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
       /*int fd_out;
       if (-1 == (fd_out = open("machine_file",O_RDONLY))){
@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
       memset(buff,0,128);
       char tab_machine_name[3][128];
       fichier = fopen("machine_file","r");
+      char buff2[128] = "HEEEE SALUT A TOUTS LES AMIS !!";
+      printf("%s\n",buff2 );
 
 
 
@@ -54,6 +56,13 @@ int main(int argc, char *argv[])
          while (fgets(buff, 128, fichier) != NULL){
             num_procs ++;
             strcpy(tab_machine_name[num_procs],buff);
+            int n = 0;
+            while(tab_machine_name[num_procs][n] != '\0'){
+              if (tab_machine_name[num_procs][n] == '\n') {
+                tab_machine_name[num_procs][n] = '\0';
+            }
+            n++;
+          }
             //printf("%s\n", buff);
          }
       }
@@ -63,23 +72,27 @@ int main(int argc, char *argv[])
 
       /* 2- on recupere les noms des machines : le nom de */
       for (int i=0; i<num_procs; i++){
-         //printf("machines : %s\n", tab_machine_name[num_procs]);
+         printf("machines : %s\n", tab_machine_name[num_procs]);
+         if (strcmp(tab_machine_name[num_procs],"localhost") == 0){
+           printf("On est bon\n");
+         }
+         else {printf("On est pas bon\n");}
       }
 
       /* la machine est un des elements d'identification */
-      
+
       /* creation de la socket d'ecoute */
-      /* + ecoute effective */ 
+      /* + ecoute effective */
       int sock_fd = creer_socket("127.0.0.1", 8081);
-      
+
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
 
-         
+        printf("machine name: %s\n",tab_machine_name[i]);
          char buffsend[128], buff_err[128];
          memset(buffsend,0,128), memset(buff_err,0,128);
-         
-         
+
+
 
          /* creation du tube pour rediriger stdout */
          int fd_stdout[2];
@@ -92,37 +105,37 @@ int main(int argc, char *argv[])
 
          pid = fork();
          if(pid == -1) ERROR_EXIT("fork");
-         
-         if (pid == 0) { /* fils */	
+
+         if (pid == 0) { /* fils */
 
 
 
-            
-            /* redirection stdout */	      
-            
 
-            
+            /* redirection stdout */
+
+
+            printf("%s\n",buff2 );
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
-            /* redirection stderr */	      	      
+            /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
-            /* Creation du tableau d'arguments pour le ssh */ 
+            /* Creation du tableau d'arguments pour le ssh */
                char * argv_ssh[4]; //tableau argv du programme qu'on va executer avec execv
                memset(argv_ssh,0,1024);
-               char path[1024]; 
+               char path[1024];
                getcwd(path,1024);
                sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
                argv_ssh[0] = "ssh";
-               argv_ssh[1] = "localhost";
+               argv_ssh[1] = tab_machine_name[i];
                argv_ssh[2] = path;
                argv_ssh[3] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
-            execvp("ssh", argv_ssh);            
+            execvp("ssh", argv_ssh);
             wait(NULL);
 
-         } else  if(pid > 0) { /* pere */		      
+         } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
             close(fd_stdout[1]);
             read(fd_stdout[0],buffsend,128);
@@ -132,12 +145,12 @@ int main(int argc, char *argv[])
             read(fd_stderr[0],buff_err,128);
             write(STDOUT_FILENO,buff_err,strlen(buff_err));
 
-            num_procs_creat++;	      
+            num_procs_creat++;
          }
       }
-      
+
       for(i = 0; i < num_procs ; i++){
-      
+
       /* on accepte les connexions des processus dsm */
       struct sockaddr_in client_addr;
       socklen_t size_addr = sizeof(struct sockaddr_in);
@@ -145,7 +158,7 @@ int main(int argc, char *argv[])
       /*  On recupere le nom de la machine distante */
       /* 1- d'abord la taille de la chaine */
       /* 2- puis la chaine elle-meme */
-      
+
       /* On recupere le pid du processus distant  */
       char buff_recv[128];
       memset(buff_recv, 0, 128);
@@ -157,30 +170,29 @@ int main(int argc, char *argv[])
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
       }
-      
+
       /* envoi du nombre de processus aux processus dsm*/
-      
+
       /* envoi des rangs aux processus dsm */
-      
+
       /* envoi des infos de connexion aux processus */
-      
+
       /* gestion des E/S : on recupere les caracteres */
-      /* sur les tubes de redirection de stdout/stderr */     
+      /* sur les tubes de redirection de stdout/stderr */
       /* while(1)
             {
                je recupere les infos sur les tubes de redirection
                jusqu'à ce qu'ils soient inactifs (ie fermes par les
                processus dsm ecrivains de l'autre cote ...)
-         
+
             };
          */
-      
-      /* on attend les processus fils */
-      
-      /* on ferme les descripteurs proprement */
-      
-      /* on ferme la socket d'ecoute */
-   }   
-   exit(EXIT_SUCCESS);  
-}
 
+      /* on attend les processus fils */
+
+      /* on ferme les descripteurs proprement */
+
+      /* on ferme la socket d'ecoute */
+   }
+   exit(EXIT_SUCCESS);
+}
