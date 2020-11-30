@@ -13,14 +13,17 @@ int main(int argc, char **argv)
    /* necessaires pour la phase dsm_init */   
    int sock_fd = handle_connect("127.0.0.1", 8081);
    /* Envoi du nom de machine au lanceur */
-
+   char machine_name[128];
+   size_t len_machine_name;
+   gethostname(machine_name, 128);
+   printf("%s\n", machine_name);
+   len_machine_name = strlen(machine_name);
+   send_msg(sock_fd, (void *) &len_machine_name, sizeof(size_t));
+   send_msg(sock_fd, machine_name, 128);
    /* Envoi du pid au lanceur */
    pid_t pid;
    pid = getpid();
-   sprintf(buffer, "%d", pid);
-	if (send(sock_fd, buffer, strlen(buffer), 0) <= 0) {
-		printf("Error while sending a message");
-	}
+   send_msg(sock_fd, (void *) &pid, sizeof(pid));
    /* Creation de la socket d'ecoute pour les */
    /* connexions avec les autres processus dsm */
 

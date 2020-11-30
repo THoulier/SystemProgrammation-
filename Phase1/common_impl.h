@@ -36,3 +36,6 @@ int creer_socket(char * adress_ip, int port_num);
 
 int handle_connect(char address_ip[], int portnb);
 
+int send_msg(int fd,void * buffer, int len);
+
+int recv_msg(int fd,void * buffer, int len);

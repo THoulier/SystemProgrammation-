@@ -150,20 +150,18 @@ int main(int argc, char *argv[])
       int client_fd = accept(sock_fd,(struct sockaddr*)&client_addr,&size_addr);
       /*  On recupere le nom de la machine distante */
       /* 1- d'abord la taille de la chaine */
+      size_t len_machine_name;
+      recv_msg(client_fd, (void *) &len_machine_name, sizeof(len_machine_name));
       /* 2- puis la chaine elle-meme */
-
+      char machine_name[128];
+      recv_msg(client_fd, machine_name, sizeof(machine_name));
       /* On recupere le pid du processus distant  */
-      char buff_recv[128];
-      memset(buff_recv, 0, 128);
-      if (recv(client_fd, buff_recv, 128, 0) <= 0) {
-			printf("Error while receiving a message\n");
-			break;
-      }
-      printf("%s\n", buff_recv);
+      pid_t pid;
+      recv_msg(client_fd, (void *) &pid, sizeof(pid));
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
+      printf("%s %d %d\n", machine_name, pid, len_machine_name);
       }
-
       /* envoi du nombre de processus aux processus dsm*/
 
       /* envoi des rangs aux processus dsm */

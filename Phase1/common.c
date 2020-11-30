@@ -61,6 +61,24 @@ int handle_connect(char address_ip[], int portnb) {
 
 }
 
+
+int send_msg(int fd,void * buffer, int len){
+	int ret = -1;
+	if ((ret = send(fd, buffer, len, 0)) < 0){
+		printf("Error while sending a message");
+		return 0;
+	}
+	return ret;
+}
+
+int recv_msg(int fd,void * buffer, int len){
+	int ret = -1;
+	if ((ret = recv(fd, buffer, len, 0)) < 0){
+		printf("Error while receiving a message");
+		return 0;
+	}
+	return ret;
+}
 /* Vous pouvez ecrire ici toutes les fonctions */
 /* qui pourraient etre utilisees par le lanceur */
 /* et le processus intermediaire. N'oubliez pas */
