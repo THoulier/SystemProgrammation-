@@ -44,10 +44,11 @@ int main(int argc, char *argv[])
       FILE * fichier = NULL;
       char buff[128];
       memset(buff,0,128);
-      char tab_machine_name[3][128];
+      char ** tab_machine_name =(char**) malloc(3 * sizeof(char*));
+      for (int i = 0;i<3;i++){
+        tab_machine_name[i] = malloc(sizeof(**tab_machine_name) * 128);
+      }
       fichier = fopen("machine_file","r");
-
-
 
       /* 1- on recupere le nombre de processus a lancer */
       if (fichier != NULL){
@@ -72,19 +73,13 @@ int main(int argc, char *argv[])
 
       /* 2- on recupere les noms des machines : le nom de */
       for (int i=0; i<num_procs; i++){
-         printf("machines : %s\n", tab_machine_name[i]);
-         if (strcmp(tab_machine_name[i],"localhost") == 0){
-           printf("On est bon\n");
-         }
-         else {printf("On est pas bon\n");}
+        // printf("machines : %s\n", tab_machine_name[i]);
       }
-
       /* la machine est un des elements d'identification */
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
       int sock_fd = creer_socket("127.0.0.1", 8081);
-
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
 
@@ -113,7 +108,6 @@ int main(int argc, char *argv[])
 
             /* redirection stdout */
 
-
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
             /* redirection stderr */
@@ -126,9 +120,7 @@ int main(int argc, char *argv[])
                getcwd(path,1024);
                sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
                argv_ssh[0] = "ssh";
-            //   strcpy(argv_ssh[1] , tab_machine_name[i]);
-                printf("machine name:%s\n",tab_machine_name[i]);
-               argv_ssh[1] = "localhost";
+               argv_ssh[1] = tab_machine_name[i];
                argv_ssh[2] = path;
                argv_ssh[3] = NULL;
             /* jump to new prog : */
