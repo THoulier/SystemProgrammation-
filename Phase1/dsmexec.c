@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
       for(i = 0; i < num_procs ; i++) {
 
 
-         char buffsend[128], buff_err[128];
-         memset(buffsend,0,128), memset(buff_err,0,128);
+         char buffsend[1024], buff_err[1024];
+         memset(buffsend,0,1024), memset(buff_err,0,1024);
 
 
 
@@ -150,17 +150,17 @@ int main(int argc, char *argv[])
          } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
             close(fd_stdout[1]);
-            read(fd_stdout[0],buffsend,128);
+            read(fd_stdout[0],buffsend,1024);
             write(STDOUT_FILENO,buffsend,strlen(buffsend));
 
             close(fd_stderr[1]);
-            read(fd_stderr[0],buff_err,128);
+            read(fd_stderr[0],buff_err,1024);
             write(STDOUT_FILENO,buff_err,strlen(buff_err));
 
             num_procs_creat++;
          }
       }
-
+      char ** tab_machine_name_received =(char**) malloc(num_procs * sizeof(char*));
       for(i = 0; i < num_procs ; i++){
 
       /* on accepte les connexions des processus dsm */
@@ -172,14 +172,18 @@ int main(int argc, char *argv[])
       size_t len_machine_name;
       recv_msg(client_fd, (void *) &len_machine_name, sizeof(len_machine_name));
       /* 2- puis la chaine elle-meme */
-      char machine_name[128];
-      recv_msg(client_fd, machine_name, sizeof(machine_name));
+      tab_machine_name_received[i] = malloc(len_machine_name * sizeof(**tab_machine_name_received));
+      recv_msg(client_fd, (void *) tab_machine_name_received[i], len_machine_name);
       /* On recupere le pid du processus distant  */
       pid_t pid;
       recv_msg(client_fd, (void *) &pid, sizeof(pid));
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
-      printf("%s %d %d\n", machine_name, pid, len_machine_name);
+
+
+
+      
+      printf("%s %d %ld\n", tab_machine_name_received[i], pid, len_machine_name);
       }
       /* envoi du nombre de processus aux processus dsm*/
 
