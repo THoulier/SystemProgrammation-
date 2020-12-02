@@ -32,7 +32,7 @@ struct dsm_proc {
 };
 typedef struct dsm_proc dsm_proc_t;
 
-int creer_socket(char * adress_ip, int port_num);
+int creer_socket(int * port_num);
 
 int handle_connect(char address_ip[], int portnb);
 

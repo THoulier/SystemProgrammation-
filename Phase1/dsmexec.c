@@ -79,7 +79,18 @@ int main(int argc, char *argv[])
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
-      int sock_fd = creer_socket("127.0.0.1", 8081);
+      int port_num = 8081;
+      int sock_fd = creer_socket(&port_num);
+      printf("le numero de port est : %d\n", port_num);
+
+      char * dsmexec_port = malloc(sizeof(*dsmexec_port));
+      sprintf(dsmexec_port, "%i", port_num);
+
+      char dsmexec_machine_name[128];
+      memset(dsmexec_machine_name,0,128);
+	   gethostname(dsmexec_machine_name, 128);	
+
+
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
 
@@ -103,35 +114,38 @@ int main(int argc, char *argv[])
 
          if (pid == 0) { /* fils */
 
-
-
-
             /* redirection stdout */
-
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
+
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
+
             /* Creation du tableau d'arguments pour le ssh */
-               char * argv_ssh[4]; //tableau argv du programme qu'on va executer avec execv
-               memset(argv_ssh,0,1024);
-               char path[1024];
-               getcwd(path,1024);
-               sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
-               argv_ssh[0] = "ssh";
-               argv_ssh[1] = tab_machine_name[i];
-               argv_ssh[2] = path;
-               for (int i = 3; i<argc+2; i++){
-                 argv_ssh[i] = argv[1+i-3];
-                 argv_ssh[i+1] = NULL;
-               }
+               
+            char * argv_ssh[argc-2+6]; //tableau argv du programme qu'on va executer avec execv
+            //memset(argv_ssh, 0, 7 * sizeof(*argv_ssh));
 
+            char path[1024];
+            memset(path, 0, 1024);
+            getcwd(path,1024);
+            sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
 
+            argv_ssh[0] = "ssh";
+            argv_ssh[1] = tab_machine_name[i];
+            argv_ssh[2] = path;
+            argv_ssh[3] = dsmexec_machine_name;
+            argv_ssh[4] = dsmexec_port;
+            for (int i = 5; i<argc+3; i++){
+              argv_ssh[i] = argv[i-3];
+            }
+            argv_ssh[argc-2+5] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
-            wait(NULL);
+            
+            //wait(NULL);
 
          } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
