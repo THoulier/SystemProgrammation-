@@ -31,14 +31,17 @@ int main(int argc, char **argv)
    pid_t pid;
    pid = getpid();
    send_msg(sock_fd_dsmexec, (void *) &pid, sizeof(pid));
-
+   printf("le pid est : %d\n", pid);
    /* Creation de la socket d'ecoute pour les */
    /* connexions avec les autres processus dsm */
-   //int sock_fd_distant = creer_socket(machine_name, 8082);
-
+   int port_num = 0;
+   int sock_fd_distant = creer_socket(&port_num);
+   printf("le numero de port est : %d\n", port_num);
    /* Envoi du numero de port au lanceur */
    /* pour qu'il le propage à tous les autres */
    /* processus dsm */
+   send_msg(sock_fd_dsmexec, (void *) &port_num, sizeof(port_num));
+
 
    /* on execute la bonne commande */
    return 0;

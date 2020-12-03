@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
-      int port_num = 8081;
+      int port_num = 0;
       int sock_fd = creer_socket(&port_num);
-      printf("le numero de port est : %d\n", port_num);
+      printf("le numero de port est : %d\n", port_num); //port modifie apres creation de socket
 
       char * dsmexec_port = malloc(sizeof(*dsmexec_port));
       sprintf(dsmexec_port, "%i", port_num);
@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
          }
       }
       char ** tab_machine_name_received =(char**) malloc(num_procs * sizeof(char*));
+      int * tab_port_received =(int*) malloc(num_procs * sizeof(*tab_port_received));
       for(i = 0; i < num_procs ; i++){
 
       /* on accepte les connexions des processus dsm */
@@ -179,11 +180,11 @@ int main(int argc, char *argv[])
       recv_msg(client_fd, (void *) &pid, sizeof(pid));
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
-
+      recv_msg(client_fd, (void *) &tab_port_received[i], sizeof(int));
 
 
       
-      printf("%s %d %ld\n", tab_machine_name_received[i], pid, len_machine_name);
+      printf("Processus %i : machine : %s ; pid : %d ; len : %ld ; port : %i\n", i, tab_machine_name_received[i], pid, len_machine_name,tab_port_received[i]);
       }
       /* envoi du nombre de processus aux processus dsm*/
 
