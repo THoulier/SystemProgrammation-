@@ -1,6 +1,6 @@
 #include "common_impl.h"
 
-int creer_socket(char * adress_ip, int port_num) 
+int creer_socket(int * port_num) 
 {   
    /* fonction de creation et d'attachement */
    /* d'une nouvelle socket */
@@ -10,27 +10,37 @@ int creer_socket(char * adress_ip, int port_num)
 	printf("Creating socket...\n");
 	int server_sock = socket(AF_INET, SOCK_STREAM, 0);
 	// create server addr
-	char  * addr_ip = adress_ip;
-	short port = port_num;
+	char machine_name[128];
+	memset(machine_name, 0, 128);
+	gethostname(machine_name, 128);	
+	
 	struct sockaddr_in  server_addr;
+	socklen_t  len = sizeof(struct sockaddr_in);
 	memset(&server_addr, '\0', sizeof(server_addr));
 	server_addr.sin_family= AF_INET;
-	server_addr.sin_port = htons(port);
-	inet_aton(addr_ip,&(server_addr.sin_addr));
-		
+	server_addr.sin_port = htons(*port_num);
+	inet_aton(machine_name,&(server_addr.sin_addr));
+
+
 	// bind to server addr
 	printf("Binding...\n");
 	if( bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1){
 		perror("Error while binding");
 		return 0;
 	}
-	
+
+	if (getsockname(server_sock,(struct sockaddr *)&server_addr,&len) == -1 ){ //recupere le numero de port assigne a la socket
+      	perror("Error getsockname function\n");
+   	}
+	*port_num = htons(server_addr.sin_port);
+
 	// listen
 	printf("Listening...\n");
 	if (listen(server_sock, 10) == -1){
 		perror("Error while listening");
 		return 0;
 	}
+
 	return server_sock;
 
 }
@@ -62,7 +72,7 @@ int handle_connect(char address_ip[], int portnb) {
 }
 
 
-int send_msg(int fd,void * buffer, int len){
+int send_msg(int fd, void * buffer, int len){
 	int ret = -1;
 	if ((ret = send(fd, buffer, len, 0)) < 0){
 		printf("Error while sending a message");
@@ -71,7 +81,7 @@ int send_msg(int fd,void * buffer, int len){
 	return ret;
 }
 
-int recv_msg(int fd,void * buffer, int len){
+int recv_msg(int fd, void * buffer, int len){
 	int ret = -1;
 	if ((ret = recv(fd, buffer, len, 0)) < 0){
 		printf("Error while receiving a message");
