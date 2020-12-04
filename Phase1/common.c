@@ -1,7 +1,7 @@
 #include "common_impl.h"
 
-int creer_socket(int * port_num) 
-{   
+int creer_socket(int * port_num)
+{
    /* fonction de creation et d'attachement */
    /* d'une nouvelle socket */
    /* renvoie le numero de descripteur */
@@ -12,8 +12,8 @@ int creer_socket(int * port_num)
 	// create server addr
 	char machine_name[128];
 	memset(machine_name, 0, 128);
-	gethostname(machine_name, 128);	
-	
+	gethostname(machine_name, 128);
+
 	struct sockaddr_in  server_addr;
 	socklen_t  len = sizeof(struct sockaddr_in);
 	memset(&server_addr, '\0', sizeof(server_addr));
@@ -95,4 +95,47 @@ int recv_msg(int fd, void * buffer, int len){
 /* de declarer le prototype de ces nouvelles */
 /* fonctions dans common_impl.h */
 
+void handle_poll(int sfd, int num_procs){
 
+	//Acept incoming connection
+	struct pollfd fds[num_procs];
+	memset(fds,0,num_procs*sizeof(struct pollfd));
+	fds[0].fd = sfd;
+	fds[0].events = POLLIN;
+	struct dsm_proc_conn dsm_proc[num_procs];
+	while(1)
+	{
+		int enabled = 0;
+		enabled = poll(fds,num_procs,-1);
+		if (enabled > 0){
+			for (size_t i =0; i < num_procs; i++){
+				if (fds[i].revents ==  POLLIN && i == 0){
+					struct sockaddr_in client_addr;
+					socklen_t size_addr =  sizeof(struct sockaddr_in);
+					int client_fd = accept(fds[i].fd,(struct sockaddr*)&client_addr, &size_addr);
+					printf("new process connected\n");
+					for (size_t j = 0; j <num_procs; j++)
+					{
+						if (fds[j].fd == 0)
+						{
+							fds[j].fd = client_fd;
+							fds[j].events = POLLIN;
+							break;
+						}
+					}
+				}
+					else if ((fds[i].revents & POLLHUP)&& i != 0)
+					{
+						close(fds[i].fd);
+						printf("socket n°%li is closed \n",i);
+
+					}
+				else if (fds[i].revents == POLLIN && i != 0)
+				{
+// receive message and store info in dsm_proc_conn
+
+			}
+		}
+	}
+}
+}

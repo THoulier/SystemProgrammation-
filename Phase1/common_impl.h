@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 /* autres includes (eventuellement) */
 
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}
@@ -22,11 +23,11 @@ struct dsm_proc_conn  {
    int rank;
    /* a completer */
 };
-typedef struct dsm_proc_conn dsm_proc_conn_t; 
+typedef struct dsm_proc_conn dsm_proc_conn_t;
 
 /* definition du type des infos */
 /* d'identification des processus dsm */
-struct dsm_proc {   
+struct dsm_proc {
   pid_t pid;
   dsm_proc_conn_t connect_info;
 };
@@ -39,3 +40,5 @@ int handle_connect(char address_ip[], int portnb);
 int send_msg(int fd,void * buffer, int len);
 
 int recv_msg(int fd,void * buffer, int len);
+
+void handle_poll(int sfd, int num_procs);
