@@ -44,34 +44,41 @@ int main(int argc, char *argv[])
       FILE * fichier = NULL;
       char buff[128];
       memset(buff,0,128);
-      char ** tab_machine_name =(char**) malloc(3 * sizeof(char*));
-      for (int i = 0;i<3;i++){
-        tab_machine_name[i] = malloc(sizeof(**tab_machine_name) * 128);
-      }
+      char caractere;
+      char *positionEntree = NULL;
       fichier = fopen("machine_file","r");
-
       /* 1- on recupere le nombre de processus a lancer */
-      if (fichier != NULL){
-         while (fgets(buff, 128, fichier) != NULL){
-            int n = 0;
-            strcpy(tab_machine_name[num_procs],buff);
-            while(tab_machine_name[num_procs][n] != '\0'){
-              if (tab_machine_name[num_procs][n] == '\n') {
-                tab_machine_name[num_procs][n] = '\0';
-            }
-            n++;
+      do
+      {
+          caractere=fgetc(fichier);// lire cractere par caractere
+          if(isspace(caractere))// a chaque mise à la ligne
+          {
+              num_procs++;// on ajoute + 1 à nombre de mots
           }
-            num_procs ++;
+      }while(caractere != EOF);//lire jusqu'à la fin du fichier
+      printf("num proc %i\n",num_procs );
+      rewind(fichier);
+      /* 2- on recupere les noms des machines : le nom de */
+      struct dsm_proc dsm_proc[num_procs];
 
+      if (fichier != NULL){
+        for (int i=0; i<num_procs; i++){
+          if (fgets(buff, 128, fichier) != NULL){
+            positionEntree = strchr(buff, '\n'); // On recherche l'"Entrée"
+            if (positionEntree != NULL) // Si on a trouvé le retour à la ligne
+            {
+            *positionEntree = '\0'; // On remplace ce caractère par \0
+            }
+            strcpy(dsm_proc[i].connect_info.name,buff);
+          }
+        }
+       }
 
-            //printf("%s\n", buff);
-         }
-      }
       fclose(fichier);
       //printf("nb de processus à creer : %d\n", num_procs);
 
 
-      /* 2- on recupere les noms des machines : le nom de */
+
       for (int i=0; i<num_procs; i++){
         // printf("machines : %s\n", tab_machine_name[i]);
       }
@@ -88,7 +95,7 @@ int main(int argc, char *argv[])
 
       char dsmexec_machine_name[128];
       memset(dsmexec_machine_name,0,128);
-	   gethostname(dsmexec_machine_name, 128);	
+	   gethostname(dsmexec_machine_name, 128);
 
 
       /* creation des fils */
@@ -108,8 +115,9 @@ int main(int argc, char *argv[])
          pipe(fd_stderr);
 
 
-
+         dsm_proc[i].connect_info.rank = i;
          pid = fork();
+
          if(pid == -1) ERROR_EXIT("fork");
 
          if (pid == 0) { /* fils */
@@ -123,7 +131,7 @@ int main(int argc, char *argv[])
             dup2(fd_stderr[1], STDERR_FILENO);
 
             /* Creation du tableau d'arguments pour le ssh */
-               
+
             char * argv_ssh[argc-2+6]; //tableau argv du programme qu'on va executer avec execv
             //memset(argv_ssh, 0, 7 * sizeof(*argv_ssh));
 
@@ -133,7 +141,7 @@ int main(int argc, char *argv[])
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
 
             argv_ssh[0] = "ssh";
-            argv_ssh[1] = tab_machine_name[i];
+            argv_ssh[1] = dsm_proc[i].connect_info.name;
             argv_ssh[2] = path;
             argv_ssh[3] = dsmexec_machine_name;
             argv_ssh[4] = dsmexec_port;
@@ -144,7 +152,7 @@ int main(int argc, char *argv[])
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
-            
+
             //wait(NULL);
 
          } else  if(pid > 0) { /* pere */
@@ -178,13 +186,15 @@ int main(int argc, char *argv[])
       /* On recupere le pid du processus distant  */
       pid_t pid;
       recv_msg(client_fd, (void *) &pid, sizeof(pid));
+      dsm_proc[i].pid = pid;
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
       recv_msg(client_fd, (void *) &tab_port_received[i], sizeof(int));
+      dsm_proc[i].connect_info.port = tab_port_received[i];
 
 
-      
-      printf("Processus %i : machine : %s ; pid : %d ; len : %ld ; port : %i\n", i, tab_machine_name_received[i], pid, len_machine_name,tab_port_received[i]);
+
+      printf("Processus %i : machine : %s ; pid : %d ; len : %ld ; port : %i\n", i, dsm_proc[i].connect_info.name, dsm_proc[i].pid , len_machine_name,  dsm_proc[i].connect_info.port);
       }
       /* envoi du nombre de processus aux processus dsm*/
 

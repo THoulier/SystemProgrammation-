@@ -102,7 +102,7 @@ void handle_poll(int sfd, int num_procs){
 	memset(fds,0,num_procs*sizeof(struct pollfd));
 	fds[0].fd = sfd;
 	fds[0].events = POLLIN;
-	struct dsm_proc_conn dsm_proc[num_procs];
+	struct dsm_proc dsm_proc[num_procs];
 	while(1)
 	{
 		int enabled = 0;
