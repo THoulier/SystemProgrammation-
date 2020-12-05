@@ -97,15 +97,12 @@ int main(int argc, char *argv[])
       memset(dsmexec_machine_name,0,128);
 	   gethostname(dsmexec_machine_name, 128);
 
+      /* Initialisation de struct poll */
+      struct pollfd fds[2*num_procs]; //stdout + stderr pour chaque pipe
+	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
 
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
-
-
-         char buffsend[1024], buff_err[1024];
-         memset(buffsend,0,1024), memset(buff_err,0,1024);
-
-
 
          /* creation du tube pour rediriger stdout */
          int fd_stdout[2];
@@ -125,11 +122,11 @@ int main(int argc, char *argv[])
             /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
-
+            close(fd_stdout[1]);
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
-
+            close(fd_stderr[1]);
             /* Creation du tableau d'arguments pour le ssh */
 
             char * argv_ssh[argc-2+6]; //tableau argv du programme qu'on va executer avec execv
@@ -153,18 +150,18 @@ int main(int argc, char *argv[])
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
 
-            //wait(NULL);
+            wait(NULL);
 
          } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
             close(fd_stdout[1]);
-            read(fd_stdout[0],buffsend,1024);
-            write(STDOUT_FILENO,buffsend,strlen(buffsend));
+            fds[2*i].fd = fd_stdout[0]; //indice pair : on recupere les fds des stdout
+	         fds[2*i].events = POLLIN; //on initialise events à POLLIN
 
             close(fd_stderr[1]);
-            read(fd_stderr[0],buff_err,1024);
-            write(STDOUT_FILENO,buff_err,strlen(buff_err));
-
+            fds[2*i+1].fd = fd_stdout[0]; //indice impair : on recupere les fds des stderr
+            fds[2*i+1].events = POLLIN; //on initialise events à POLLIN
+            
             num_procs_creat++;
          }
       }
@@ -196,6 +193,15 @@ int main(int argc, char *argv[])
 
       printf("Processus %i : machine : %s ; pid : %d ; len : %ld ; port : %i\n", i, dsm_proc[i].connect_info.name, dsm_proc[i].pid , len_machine_name,  dsm_proc[i].connect_info.port);
       }
+      /*
+      for (int i = 0; i < num_procs ; i++){
+         for (int j =0; j < num_procs ; j++){
+            if (i != j){
+               send_msg(tab_sock_fd[j], (void *) &tab_port_received[i], sizeof(int)); //envoie des ports
+               send_msg(tab_sock_fd[j], (void *) &tab_machine_name_received[i], sizeof(tab_machine_name_received[i])); //envoies des adresses
+            }
+         }
+      }*/
       /* envoi du nombre de processus aux processus dsm*/
 
       /* envoi des rangs aux processus dsm */
@@ -212,7 +218,13 @@ int main(int argc, char *argv[])
 
             };
          */
+      /*for (int i = 0; i<2*num_procs; i++){
+            printf("fds %i : %i\n",i,fds[i].fd);
+            printf("fds %i : %i\n",i,fds[i].events);
+      }*/
 
+      printf("nb process : %d\n", num_procs);
+      handle_poll(fds, num_procs);
       /* on attend les processus fils */
 
       /* on ferme les descripteurs proprement */

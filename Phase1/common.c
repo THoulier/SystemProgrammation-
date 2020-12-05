@@ -95,47 +95,59 @@ int recv_msg(int fd, void * buffer, int len){
 /* de declarer le prototype de ces nouvelles */
 /* fonctions dans common_impl.h */
 
-void handle_poll(int sfd, int num_procs){
+void handle_poll(struct pollfd fds[], int num_procs){
+	char buff_stdout[1024], buff_stderr[1024];
+    memset(buff_stdout,0,1024), memset(buff_stderr,0,1024);
 
-	//Acept incoming connection
-	struct pollfd fds[num_procs];
-	memset(fds,0,num_procs*sizeof(struct pollfd));
-	fds[0].fd = sfd;
-	fds[0].events = POLLIN;
-	struct dsm_proc dsm_proc[num_procs];
-	while(1)
+	int pipe_working = 2*num_procs;
+	while(pipe_working >= 0)
 	{
 		int enabled = 0;
-		enabled = poll(fds,num_procs,-1);
+		enabled = poll(fds,2*num_procs,-1);
+
 		if (enabled > 0){
-			for (size_t i =0; i < num_procs; i++){
-				if (fds[i].revents ==  POLLIN && i == 0){
-					struct sockaddr_in client_addr;
-					socklen_t size_addr =  sizeof(struct sockaddr_in);
-					int client_fd = accept(fds[i].fd,(struct sockaddr*)&client_addr, &size_addr);
-					printf("new process connected\n");
-					for (size_t j = 0; j <num_procs; j++)
-					{
-						if (fds[j].fd == 0)
-						{
-							fds[j].fd = client_fd;
-							fds[j].events = POLLIN;
-							break;
-						}
+
+			for (int i = 0; i < 2*num_procs; i++){
+				int ret = -1;
+				
+				if (fds[i].revents ==  POLLIN && i%2 == 0){ //indices pairs = stdout
+					printf("Je suis un stdout avec i = %i\n",i);
+
+					if ((ret = read(fds[i].fd, buff_stdout, 1024)) > 0){
+						printf("buffer non vide\n");
+						printf("[Processus %i : STDOUT] : \n", i);
+						//write(STDOUT_FILENO,buff_stdout,strlen(buff_stdout));
+						printf("%s", buff_stdout);
+						printf("[END stdout %i]\n", i);
+					} else{
+						pipe_working--;
 					}
+					
+					memset(buff_stdout,0,1024);
 				}
-					else if ((fds[i].revents & POLLHUP)&& i != 0)
-					{
-						close(fds[i].fd);
-						printf("socket n°%li is closed \n",i);
+				
+				else if ((fds[i].revents == POLLHUP)){
+					printf("Connection ends %i\n",i);
+					pipe_working--;
+					//close(fds[i].fd);
+				}
 
+				else if (fds[i].revents == POLLIN && i%2 != 0){ //indices impairs = stderr
+					printf("je suis un stderr avec i = %i\n",i);
+
+					if ((ret = read(fds[i].fd, buff_stderr, 1024)) > 0){
+						printf("[Processus %i : STDERR] : \n", i);
+						//write(STDOUT_FILENO,buff_stderr,strlen(buff_stderr));
+						printf("%s\n", buff_stderr);
+						
+					} else {
+						pipe_working--;
 					}
-				else if (fds[i].revents == POLLIN && i != 0)
-				{
-// receive message and store info in dsm_proc_conn
-
+					printf("[END stderr %i]\n", i);
+					memset(buff_stderr,0,1024);
+				}
+				//printf("i : %i\n",i);
 			}
 		}
 	}
-}
 }

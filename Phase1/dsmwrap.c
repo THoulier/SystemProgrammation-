@@ -36,13 +36,24 @@ int main(int argc, char **argv)
    /* connexions avec les autres processus dsm */
    int port_num = 0;
    int sock_fd_distant = creer_socket(&port_num);
-   printf("le numero de port est : %d\n", port_num);
+   printf("le numero de port est (wrap) : %d\n", port_num);
    /* Envoi du numero de port au lanceur */
    /* pour qu'il le propage à tous les autres */
    /* processus dsm */
    send_msg(sock_fd_dsmexec, (void *) &port_num, sizeof(port_num));
 
-
+   
    /* on execute la bonne commande */
+   char * argv_cleaned[argc-4];
+
+   for (int i = 0; i<argc-4; i++){
+      argv_cleaned[i] = argv[i+4];
+      printf("argv cleaned %i : %s\n", i, argv_cleaned[i]);
+   }
+   argv_cleaned[argc-4] = NULL;
+   
+   execvp(argv[3],argv_cleaned);
+
+   close(sock_fd_dsmexec);
    return 0;
 }

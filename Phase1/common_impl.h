@@ -45,4 +45,4 @@ int send_msg(int fd,void * buffer, int len);
 
 int recv_msg(int fd,void * buffer, int len);
 
-void handle_poll(int sfd, int num_procs);
+void handle_poll(struct pollfd fds[], int num_procs);
