@@ -24,6 +24,7 @@ struct dsm_proc_conn  {
    int rank;
    char name[100];
    int port;
+   int len_name;
 
    /* a completer */
 };

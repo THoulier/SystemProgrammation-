@@ -34,11 +34,11 @@ int main(int argc, char *argv[])
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
-      /*int fd_out;
-      if (-1 == (fd_out = open("machine_file",O_RDONLY))){
-         perror("Error on opening machine file");
-      } */
 
+      char ** tab_machine_name =(char**) malloc(3 * sizeof(char*));
+      for (int i = 0;i<3;i++){
+        tab_machine_name[i] = malloc(sizeof(**tab_machine_name) * 128);
+      }
 
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       printf("num proc %i\n",num_procs );
       rewind(fichier);
       /* 2- on recupere les noms des machines : le nom de */
-      struct dsm_proc dsm_proc[num_procs];
+      
 
       if (fichier != NULL){
         for (int i=0; i<num_procs; i++){
@@ -69,19 +69,14 @@ int main(int argc, char *argv[])
             {
             *positionEntree = '\0'; // On remplace ce caractère par \0
             }
-            strcpy(dsm_proc[i].connect_info.name,buff);
+            strcpy(tab_machine_name[i],buff);
           }
         }
        }
 
       fclose(fichier);
-      //printf("nb de processus à creer : %d\n", num_procs);
 
 
-
-      for (int i=0; i<num_procs; i++){
-        // printf("machines : %s\n", tab_machine_name[i]);
-      }
       /* la machine est un des elements d'identification */
 
       /* creation de la socket d'ecoute */
@@ -98,8 +93,9 @@ int main(int argc, char *argv[])
 	   gethostname(dsmexec_machine_name, 128);
 
       /* Initialisation de struct poll */
-      struct pollfd fds[2*num_procs]; //stdout + stderr pour chaque pipe
+      struct pollfd fds[2*num_procs-1]; //stdout + stderr pour chaque pipe
 	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
+
 
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
@@ -111,8 +107,6 @@ int main(int argc, char *argv[])
          int fd_stderr[2];
          pipe(fd_stderr);
 
-
-         dsm_proc[i].connect_info.rank = i;
          pid = fork();
 
          if(pid == -1) ERROR_EXIT("fork");
@@ -122,11 +116,9 @@ int main(int argc, char *argv[])
             /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
-            close(fd_stdout[1]);
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
-            close(fd_stderr[1]);
             /* Creation du tableau d'arguments pour le ssh */
 
             char * argv_ssh[argc-2+6]; //tableau argv du programme qu'on va executer avec execv
@@ -138,7 +130,7 @@ int main(int argc, char *argv[])
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
 
             argv_ssh[0] = "ssh";
-            argv_ssh[1] = dsm_proc[i].connect_info.name;
+            argv_ssh[1] = tab_machine_name[i];
             argv_ssh[2] = path;
             argv_ssh[3] = dsmexec_machine_name;
             argv_ssh[4] = dsmexec_port;
@@ -150,63 +142,67 @@ int main(int argc, char *argv[])
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
 
-            wait(NULL);
-
          } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
             close(fd_stdout[1]);
+            close(fd_stderr[1]);
+
             fds[2*i].fd = fd_stdout[0]; //indice pair : on recupere les fds des stdout
 	         fds[2*i].events = POLLIN; //on initialise events à POLLIN
 
-            close(fd_stderr[1]);
-            fds[2*i+1].fd = fd_stdout[0]; //indice impair : on recupere les fds des stderr
+            
+            fds[2*i+1].fd = fd_stderr[0]; //indice impair : on recupere les fds des stderr
             fds[2*i+1].events = POLLIN; //on initialise events à POLLIN
             
             num_procs_creat++;
          }
       }
-      char ** tab_machine_name_received =(char**) malloc(num_procs * sizeof(char*));
-      int * tab_port_received =(int*) malloc(num_procs * sizeof(*tab_port_received));
-      for(i = 0; i < num_procs ; i++){
 
+      /* Initialisation du tableau de structures qui va contenir les informations sur les processus */
+      dsm_proc_t dsm_proc[num_procs]; //tableau pour stocker les structures reçues
+      int tab_sock_fd[num_procs-1]; //tableau pour stocker les sockets des processus distants
+      for(i = 0; i < num_procs ; i++){
       /* on accepte les connexions des processus dsm */
       struct sockaddr_in client_addr;
       socklen_t size_addr = sizeof(struct sockaddr_in);
       int client_fd = accept(sock_fd,(struct sockaddr*)&client_addr,&size_addr);
+      tab_sock_fd[i] = client_fd;
       /*  On recupere le nom de la machine distante */
       /* 1- d'abord la taille de la chaine */
-      size_t len_machine_name;
-      recv_msg(client_fd, (void *) &len_machine_name, sizeof(len_machine_name));
+      //size_t len_machine_name;
+      //recv_msg(client_fd, (void *) &len_machine_name, sizeof(len_machine_name));
       /* 2- puis la chaine elle-meme */
-      tab_machine_name_received[i] = malloc(len_machine_name * sizeof(**tab_machine_name_received));
-      recv_msg(client_fd, (void *) tab_machine_name_received[i], len_machine_name);
+      //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.name, len_machine_name);
       /* On recupere le pid du processus distant  */
-      pid_t pid;
-      recv_msg(client_fd, (void *) &pid, sizeof(pid));
-      dsm_proc[i].pid = pid;
+      //recv_msg(client_fd, (void *) &dsm_proc[i].pid, sizeof(pid_t));
       /* On recupere le numero de port de la socket */
       /* d'ecoute des processus distants */
-      recv_msg(client_fd, (void *) &tab_port_received[i], sizeof(int));
-      dsm_proc[i].connect_info.port = tab_port_received[i];
+      //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.port, sizeof(int));
+      recv_msg(client_fd, (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
 
-
-
-      printf("Processus %i : machine : %s ; pid : %d ; len : %ld ; port : %i\n", i, dsm_proc[i].connect_info.name, dsm_proc[i].pid , len_machine_name,  dsm_proc[i].connect_info.port);
+      dsm_proc[i].connect_info.rank = i;
+      close(client_fd);
+      printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
+      
       /*
       for (int i = 0; i < num_procs ; i++){
          for (int j =0; j < num_procs ; j++){
-            if (i != j){
-               send_msg(tab_sock_fd[j], (void *) &tab_port_received[i], sizeof(int)); //envoie des ports
-               send_msg(tab_sock_fd[j], (void *) &tab_machine_name_received[i], sizeof(tab_machine_name_received[i])); //envoies des adresses
+            if (i != j){ 
+               //envoi du nombre de processus aux processus dsm
+               send_msg(tab_sock_fd[j], (void *) &num_procs, sizeof(int));
+               //envoi des rangs aux processus dsm 
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.rank, sizeof(int));
+               //envoi des infos de connexion aux processus 
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.port, sizeof(int));
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.name, dsm_proc[j].connect_info.len_name);
             }
          }
-      }*/
-      /* envoi du nombre de processus aux processus dsm*/
+      }
+   */
 
-      /* envoi des rangs aux processus dsm */
 
-      /* envoi des infos de connexion aux processus */
+     
 
       /* gestion des E/S : on recupere les caracteres */
       /* sur les tubes de redirection de stdout/stderr */
@@ -218,18 +214,22 @@ int main(int argc, char *argv[])
 
             };
          */
-      /*for (int i = 0; i<2*num_procs; i++){
+        
+      for (int i = 0; i<2*num_procs; i++){
             printf("fds %i : %i\n",i,fds[i].fd);
-            printf("fds %i : %i\n",i,fds[i].events);
-      }*/
+      }
 
       printf("nb process : %d\n", num_procs);
       handle_poll(fds, num_procs);
+
       /* on attend les processus fils */
 
       /* on ferme les descripteurs proprement */
-
+      for (i=0 ; i<2*num_procs;i++){
+         close(fds[i].fd);
+      }
       /* on ferme la socket d'ecoute */
+      close(sock_fd);
    }
    exit(EXIT_SUCCESS);
 }

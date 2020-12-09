@@ -111,13 +111,10 @@ void handle_poll(struct pollfd fds[], int num_procs){
 				int ret = -1;
 				
 				if (fds[i].revents ==  POLLIN && i%2 == 0){ //indices pairs = stdout
-					printf("Je suis un stdout avec i = %i\n",i);
 
 					if ((ret = read(fds[i].fd, buff_stdout, 1024)) > 0){
-						printf("buffer non vide\n");
 						printf("[Processus %i : STDOUT] : \n", i);
-						//write(STDOUT_FILENO,buff_stdout,strlen(buff_stdout));
-						printf("%s", buff_stdout);
+						write(STDOUT_FILENO,buff_stdout,ret);
 						printf("[END stdout %i]\n", i);
 					} else{
 						pipe_working--;
@@ -133,20 +130,19 @@ void handle_poll(struct pollfd fds[], int num_procs){
 				}
 
 				else if (fds[i].revents == POLLIN && i%2 != 0){ //indices impairs = stderr
-					printf("je suis un stderr avec i = %i\n",i);
 
 					if ((ret = read(fds[i].fd, buff_stderr, 1024)) > 0){
-						printf("[Processus %i : STDERR] : \n", i);
-						//write(STDOUT_FILENO,buff_stderr,strlen(buff_stderr));
-						printf("%s\n", buff_stderr);
-						
+						printf("[Processus %i : STDERR] : \n", i-1);
+						write(STDOUT_FILENO,buff_stderr,ret);
+						printf("[END stderr %i]\n", i-1);
 					} else {
 						pipe_working--;
 					}
-					printf("[END stderr %i]\n", i);
+					
 					memset(buff_stderr,0,1024);
 				}
 				//printf("i : %i\n",i);
+
 			}
 		}
 	}

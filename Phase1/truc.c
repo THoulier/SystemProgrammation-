@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv[])
 {
+  /*
     int fd;
     int i;
     char str[1024];
@@ -24,6 +25,10 @@ int main(int argc, char *argv[])
     if(fd == -1) perror("open");
     fprintf(stdout,"================ Valeur du descripteur : %i\n",fd);
 
+    fflush(stdout);
+    fflush(stderr); */
+    fprintf(stdout,"HELLO WORLD\n");
+    fprintf(stderr,"arg[%i] : %s\n",1,argv[1]);
     fflush(stdout);
     fflush(stderr);
     return 0;
