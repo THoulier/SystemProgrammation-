@@ -100,31 +100,27 @@ void handle_poll(struct pollfd fds[], int num_procs){
     memset(buff_stdout,0,1024), memset(buff_stderr,0,1024);
 
 	int pipe_working = 2*num_procs;
-	while(pipe_working >= 0)
+	while(pipe_working > 0)
 	{
 		int enabled = 0;
 		enabled = poll(fds,2*num_procs,-1);
 
 		if (enabled > 0){
-
+			//printf("enabled : %d\n", enabled);
 			for (int i = 0; i < 2*num_procs; i++){
 				int ret = -1;
 				if (i%2 == 0){
 					if (fds[i].revents ==  POLLIN){ //indices pairs = stdout
-
+						printf("===================%i\n",i);
 						if ((ret = read(fds[i].fd, buff_stdout, 1024)) > 0){
 							printf("[Processus %i : STDOUT] : \n", i);
 							write(STDOUT_FILENO,buff_stdout,ret);
 							printf("[END stdout %i]\n", i);
-						} else{
-							pipe_working--;
-							fds[i].fd = -1;
-							close(fds[i].fd);
-						}
+						} 
 						
 						memset(buff_stdout,0,1024);
 					} else if ((fds[i].revents == POLLHUP)){
-						printf("Connection ends %i\n",i);
+						printf("Connection ends stdout %i\n",i);
 						pipe_working--;
 						fds[i].fd = -1;
 						close(fds[i].fd);
@@ -137,15 +133,15 @@ void handle_poll(struct pollfd fds[], int num_procs){
 							printf("[Processus %i : STDERR] : \n", i-1);
 							write(STDOUT_FILENO,buff_stderr,ret);
 							printf("[END stderr %i]\n", i-1);
-						} else {
+						} /*else {
 							pipe_working--;
 							fds[i].fd = -1;
 							close(fds[i].fd);
-						}
+						}*/
 						memset(buff_stderr,0,1024);
 
 					} else if ((fds[i].revents == POLLHUP)){
-						printf("Connection ends %i\n",i);
+						printf("Connection ends stderr %i\n",i);
 						pipe_working--;
 						fds[i].fd = -1;
 						close(fds[i].fd);

@@ -16,12 +16,8 @@ int main(int argc, char **argv)
    char machine_name[128];
    size_t len_machine_name;
    gethostname(machine_name, 128);
-   len_machine_name = strlen(machine_name);
-   printf("argc %i\n",argc );
+   len_machine_name = strlen(machine_name)+1;
 
-   for (int i=0;i<argc;i++){
-     printf("arg %i is %s\n",i,argv[i] );
-   }
 
    /* Envoi du pid au lanceur */
    pid_t pid;
@@ -49,16 +45,19 @@ int main(int argc, char **argv)
    fflush(stdout);
    fflush(stderr);
    /* on execute la bonne commande */
-   char * argv_cleaned[argc-4];
+   /*char * argv_cleaned[argc-4];
 
    for (int i = 0; i<argc-4; i++){
       argv_cleaned[i] = argv[i+4];
    }
-   argv_cleaned[argc-4] = NULL;
-
-   execvp(argv[3],argv_cleaned);
+   argv_cleaned[argc-4] = NULL;*/
+   for (int i =0; i< argc; i++){
+      printf("===============%s\n", argv[i]);
+   }
+   fflush(stdout);
+   execvp(argv[4],argv+4);
 
    close(sock_fd_dsmexec);
-   close(STDOUT_FILENO);
+
    return 0;
 }

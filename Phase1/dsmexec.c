@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	   gethostname(dsmexec_machine_name, 128);
 
       /* Initialisation de struct poll */
-      struct pollfd fds[2*num_procs-1]; //stdout + stderr pour chaque pipe
+      struct pollfd fds[2*num_procs]; //stdout + stderr pour chaque pipe
 	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
 
 
@@ -140,9 +140,8 @@ int main(int argc, char *argv[])
             argv_ssh[3] = dsmexec_machine_name;
             argv_ssh[4] = dsmexec_port;
             argv_ssh[5] = rank;
-            for (int i = size_argv_ssh; i<argc+3; i++){
-              argv_ssh[i] = argv[i-3];
-              argv_ssh[i+1] = NULL;
+            for (int i = size_argv_ssh; i<argc+4+1; i++){
+              argv_ssh[i] = argv[i-4];
             }
           //argv_ssh[argc-2+size_argv_ssh] = NULL;
             /* jump to new prog : */
@@ -160,7 +159,7 @@ int main(int argc, char *argv[])
 
             fds[2*i+1].fd = fd_stderr[0]; //indice impair : on recupere les fds des stderr
             fds[2*i+1].events = POLLIN; //on initialise events à POLLIN
-
+         
             num_procs_creat++;
          }
       }
