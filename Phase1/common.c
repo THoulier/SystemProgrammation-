@@ -99,17 +99,17 @@ void handle_poll(struct pollfd fds[], int num_procs){
 	char buff_stdout[1024], buff_stderr[1024];
     memset(buff_stdout,0,1024), memset(buff_stderr,0,1024);
 
-	int pipe_working = 2*num_procs;
+	int pipe_working = 2*num_procs + 1;
 	while(pipe_working >= 0)
 	{
 		int enabled = 0;
-		enabled = poll(fds,2*num_procs,-1);
+		enabled = poll(fds,2*num_procs + 1,-1);
 
 		if (enabled > 0){
 
 			for (int i = 0; i < 2*num_procs; i++){
 				int ret = -1;
-				
+
 				if (fds[i].revents ==  POLLIN && i%2 == 0){ //indices pairs = stdout
 
 					if ((ret = read(fds[i].fd, buff_stdout, 1024)) > 0){
@@ -119,10 +119,10 @@ void handle_poll(struct pollfd fds[], int num_procs){
 					} else{
 						pipe_working--;
 					}
-					
+
 					memset(buff_stdout,0,1024);
 				}
-				
+
 				else if ((fds[i].revents == POLLHUP)){
 					printf("Connection ends %i\n",i);
 					pipe_working--;
@@ -138,10 +138,10 @@ void handle_poll(struct pollfd fds[], int num_procs){
 					} else {
 						pipe_working--;
 					}
-					
+
 					memset(buff_stderr,0,1024);
 				}
-				//printf("i : %i\n",i);
+				printf("i : %i\n",i);
 
 			}
 		}

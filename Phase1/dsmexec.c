@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       printf("num proc %i\n",num_procs );
       rewind(fichier);
       /* 2- on recupere les noms des machines : le nom de */
-      
+
 
       if (fichier != NULL){
         for (int i=0; i<num_procs; i++){
@@ -121,23 +121,30 @@ int main(int argc, char *argv[])
             dup2(fd_stderr[1], STDERR_FILENO);
             /* Creation du tableau d'arguments pour le ssh */
 
-            char * argv_ssh[argc-2+6]; //tableau argv du programme qu'on va executer avec execv
+            int size_argv_ssh = 6;
+            char * argv_ssh[argc-2+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
             //memset(argv_ssh, 0, 7 * sizeof(*argv_ssh));
 
             char path[1024];
             memset(path, 0, 1024);
             getcwd(path,1024);
+
+            char rank[1024];
+            memset(rank, 0, 1024);
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
+            sprintf(rank, "%d", i);
 
             argv_ssh[0] = "ssh";
             argv_ssh[1] = tab_machine_name[i];
             argv_ssh[2] = path;
             argv_ssh[3] = dsmexec_machine_name;
             argv_ssh[4] = dsmexec_port;
-            for (int i = 5; i<argc+3; i++){
+            argv_ssh[5] = rank;
+            for (int i = size_argv_ssh; i<argc+3; i++){
               argv_ssh[i] = argv[i-3];
+              argv_ssh[i+1] = NULL;
             }
-            argv_ssh[argc-2+5] = NULL;
+          //argv_ssh[argc-2+size_argv_ssh] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
@@ -150,16 +157,16 @@ int main(int argc, char *argv[])
             fds[2*i].fd = fd_stdout[0]; //indice pair : on recupere les fds des stdout
 	         fds[2*i].events = POLLIN; //on initialise events à POLLIN
 
-            
+
             fds[2*i+1].fd = fd_stderr[0]; //indice impair : on recupere les fds des stderr
             fds[2*i+1].events = POLLIN; //on initialise events à POLLIN
-            
+
             num_procs_creat++;
          }
       }
 
       /* Initialisation du tableau de structures qui va contenir les informations sur les processus */
-      dsm_proc_t dsm_proc[num_procs]; //tableau pour stocker les structures reçues
+      dsm_proc_t dsm_proc[num_procs];  //tableau pour stocker les structures reçues
       int tab_sock_fd[num_procs-1]; //tableau pour stocker les sockets des processus distants
       for(i = 0; i < num_procs ; i++){
       /* on accepte les connexions des processus dsm */
@@ -180,20 +187,20 @@ int main(int argc, char *argv[])
       //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.port, sizeof(int));
       recv_msg(client_fd, (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
 
-      dsm_proc[i].connect_info.rank = i;
+
       close(client_fd);
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
-      
+
       /*
       for (int i = 0; i < num_procs ; i++){
          for (int j =0; j < num_procs ; j++){
-            if (i != j){ 
+            if (i != j){
                //envoi du nombre de processus aux processus dsm
                send_msg(tab_sock_fd[j], (void *) &num_procs, sizeof(int));
-               //envoi des rangs aux processus dsm 
+               //envoi des rangs aux processus dsm
                send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.rank, sizeof(int));
-               //envoi des infos de connexion aux processus 
+               //envoi des infos de connexion aux processus
                send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.port, sizeof(int));
                send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.name, dsm_proc[j].connect_info.len_name);
             }
@@ -202,7 +209,7 @@ int main(int argc, char *argv[])
    */
 
 
-     
+
 
       /* gestion des E/S : on recupere les caracteres */
       /* sur les tubes de redirection de stdout/stderr */
@@ -214,7 +221,7 @@ int main(int argc, char *argv[])
 
             };
          */
-        
+
       for (int i = 0; i<2*num_procs; i++){
             printf("fds %i : %i\n",i,fds[i].fd);
       }
