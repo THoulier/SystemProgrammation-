@@ -1,5 +1,4 @@
 #include "common_impl.h"
-
 /* variables globales */
 
 /* un tableau gerant les infos d'identification */
@@ -20,6 +19,7 @@ void sigchld_handler(int sig)
 {
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
+
 }
 
 
@@ -31,19 +31,17 @@ int main(int argc, char *argv[])
       pid_t pid;
       int num_procs = 0;
       int i;
+      int port_num = 0;
+      int sock_fd;
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
 
-      char ** tab_machine_name =(char**) malloc(3 * sizeof(char*));
-      for (int i = 0;i<3;i++){
-        tab_machine_name[i] = malloc(sizeof(**tab_machine_name) * 128);
-      }
 
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
-      char buff[128];
-      memset(buff,0,128);
+      char buff[NAMELEN];
+      memset(buff,0,NAMELEN);
       char caractere;
       char *positionEntree = NULL;
       fichier = fopen("machine_file","r");
@@ -58,12 +56,17 @@ int main(int argc, char *argv[])
       }while(caractere != EOF);//lire jusqu'à la fin du fichier
       printf("num proc %i\n",num_procs );
       rewind(fichier);
-      /* 2- on recupere les noms des machines : le nom de */
 
+      /* 2- on recupere les noms des machines : le nom de */
+      char ** tab_machine_name =(char**) malloc(num_procs * sizeof(char*));
+
+      for (int i = 0;i<num_procs;i++){
+        tab_machine_name[i] = malloc(sizeof(**tab_machine_name) * NAMELEN);
+      }
 
       if (fichier != NULL){
         for (int i=0; i<num_procs; i++){
-          if (fgets(buff, 128, fichier) != NULL){
+          if (fgets(buff, NAMELEN, fichier) != NULL){
             positionEntree = strchr(buff, '\n'); // On recherche l'"Entrée"
             if (positionEntree != NULL) // Si on a trouvé le retour à la ligne
             {
@@ -81,30 +84,35 @@ int main(int argc, char *argv[])
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
-      int port_num = 0;
-      int sock_fd = creer_socket(&port_num);
-      printf("le numero de port est : %d\n", port_num); //port modifie apres creation de socket
+      sock_fd = creer_socket(&port_num);
 
-      char * dsmexec_port = malloc(sizeof(*dsmexec_port));
-      sprintf(dsmexec_port, "%i", port_num);
-
-      char dsmexec_machine_name[128];
-      memset(dsmexec_machine_name,0,128);
-	   gethostname(dsmexec_machine_name, 128);
 
       /* Initialisation de struct poll */
       struct pollfd fds[2*num_procs]; //stdout + stderr pour chaque pipe
 	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
 
+      /* Initialisation des parametres du tableau argv */ 
+      int size_argv_ssh = 6;
+      char * argv_ssh[argc-2+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
+      char path[MSGLEN];
+      memset(path, 0, MSGLEN);
+      char rank[MSGLEN];
+      memset(rank, 0, MSGLEN);
+      char dsmexec_machine_name[NAMELEN];
+      memset(dsmexec_machine_name,0,NAMELEN);
+      char * dsmexec_port = malloc(sizeof(*dsmexec_port));
+
+      gethostname(dsmexec_machine_name, NAMELEN);
+      sprintf(dsmexec_port, "%i", port_num);
 
       /* creation des fils */
       for(i = 0; i < num_procs ; i++) {
+         int fd_stdout[2];
+         int fd_stderr[2];
 
          /* creation du tube pour rediriger stdout */
-         int fd_stdout[2];
          pipe(fd_stdout);
          /* creation du tube pour rediriger stderr */
-         int fd_stderr[2];
          pipe(fd_stderr);
 
          pid = fork();
@@ -116,21 +124,14 @@ int main(int argc, char *argv[])
             /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
+            close(fd_stdout[1]);
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
+            close(fd_stderr[1]);
             /* Creation du tableau d'arguments pour le ssh */
 
-            int size_argv_ssh = 6;
-            char * argv_ssh[argc-2+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
-            //memset(argv_ssh, 0, 7 * sizeof(*argv_ssh));
-
-            char path[1024];
-            memset(path, 0, 1024);
-            getcwd(path,1024);
-
-            char rank[1024];
-            memset(rank, 0, 1024);
+            getcwd(path,MSGLEN);
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
             sprintf(rank, "%d", i);
 
@@ -143,7 +144,6 @@ int main(int argc, char *argv[])
             for (int i = size_argv_ssh; i<argc+4+1; i++){
               argv_ssh[i] = argv[i-4];
             }
-          //argv_ssh[argc-2+size_argv_ssh] = NULL;
             /* jump to new prog : */
             /* execvp("ssh",newargv); */
             execvp("ssh", argv_ssh);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 
       /* Initialisation du tableau de structures qui va contenir les informations sur les processus */
       dsm_proc_t dsm_proc[num_procs];  //tableau pour stocker les structures reçues
-      int tab_sock_fd[num_procs-1]; //tableau pour stocker les sockets des processus distants
+      int tab_sock_fd[num_procs]; //tableau pour stocker les sockets des processus distants
       for(i = 0; i < num_procs ; i++){
       /* on accepte les connexions des processus dsm */
       struct sockaddr_in client_addr;
@@ -186,8 +186,7 @@ int main(int argc, char *argv[])
       //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.port, sizeof(int));
       recv_msg(client_fd, (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
 
-
-      close(client_fd);
+      //close(client_fd);
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
@@ -231,7 +230,7 @@ int main(int argc, char *argv[])
       /* on attend les processus fils */
 
       /* on ferme les descripteurs proprement */
-      for (i=0 ; i<2*num_procs;i++){
+      for (i=0 ; i<2*num_procs; i++){
          close(fds[i].fd);
       }
       /* on ferme la socket d'ecoute */

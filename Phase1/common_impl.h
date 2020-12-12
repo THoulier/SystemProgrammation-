@@ -17,15 +17,15 @@
 /* autres includes (eventuellement) */
 
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}
-
+#define MSGLEN 1024
+#define NAMELEN 128
 /* definition du type des infos */
 /* de connexion des processus dsm */
 struct dsm_proc_conn  {
    int rank;
-   char name[100];
+   char name[NAMELEN];
    int port;
    int len_name;
-
    /* a completer */
 };
 typedef struct dsm_proc_conn dsm_proc_conn_t;
