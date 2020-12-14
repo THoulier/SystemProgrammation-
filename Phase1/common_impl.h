@@ -14,6 +14,9 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <signal.h>
+
 /* autres includes (eventuellement) */
 
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}

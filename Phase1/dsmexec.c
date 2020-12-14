@@ -1,4 +1,5 @@
 #include "common_impl.h"
+
 /* variables globales */
 
 /* un tableau gerant les infos d'identification */
@@ -41,11 +42,13 @@ int main(int argc, char *argv[])
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
+      /*
       struct sigaction sigchld_action;
       memset (&sigchld_action, 0, sizeof (sigchld_action));
-      sigchld_action.sa_handler = &sigchld_handler;
-      sigaction (SIGCHLD, &sigchld_action, NULL);
-
+      sigchld_action.sa_handler = sigchld_handler;
+      sigaction(SIGCHLD, &sigchld_action, NULL);
+      */
+      
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
       char buff[NAMELEN];
@@ -247,9 +250,9 @@ int main(int argc, char *argv[])
       }
       /* Liberation de la memoire */   
       /*free(positionEntree);
-      free(tab_machine_name);
       free(argv_ssh);
       free(dsmexec_port);*/
+      free(tab_machine_name);
       /* on ferme la socket d'ecoute */
       close(sock_fd);
    }

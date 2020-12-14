@@ -143,13 +143,13 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						printf("===================%i\n",i);
 
 						printf("----------------------------[Processus %i : STDERR]----------------------------\n", tab[i]);
-						//while (ret != 0){
+						while (ret != 0){
 							if ((ret = read(fds[i].fd, (void *)buff_stderr, MSGLEN)) > 0){
 								printf("%s", buff_stderr);
 							} 
 
 							memset(buff_stderr,'\0',MSGLEN);
-						//}
+						}
 						printf("----------------------------[END STDERR %i]----------------------------\n", tab[i]);
 
 					} else if ((fds[i].revents == POLLHUP)){
