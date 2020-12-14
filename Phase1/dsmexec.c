@@ -19,7 +19,12 @@ void sigchld_handler(int sig)
 {
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
-
+   //printf("entree dans le handler\n");
+   /*int status;
+   pid_t   pid;
+   while ( (pid = waitpid(-1, &status, WNOHANG)) > 0) {
+      printf("child %d terminated\n", pid);
+   }*/
 }
 
 
@@ -36,7 +41,10 @@ int main(int argc, char *argv[])
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
-
+      struct sigaction sigchld_action;
+      memset (&sigchld_action, 0, sizeof (sigchld_action));
+      sigchld_action.sa_handler = &sigchld_handler;
+      sigaction (SIGCHLD, &sigchld_action, NULL);
 
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
@@ -114,13 +122,13 @@ int main(int argc, char *argv[])
          pipe(fd_stdout);
          /* creation du tube pour rediriger stderr */
          pipe(fd_stderr);
-
+         
          pid = fork();
 
          if(pid == -1) ERROR_EXIT("fork");
 
          if (pid == 0) { /* fils */
-
+            
             /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
@@ -191,20 +199,20 @@ int main(int argc, char *argv[])
       }
 
       /*
-      for (int i = 0; i < num_procs ; i++){
+      for (i = 0; i < num_procs ; i++){
          for (int j =0; j < num_procs ; j++){
             if (i != j){
                //envoi du nombre de processus aux processus dsm
                send_msg(tab_sock_fd[j], (void *) &num_procs, sizeof(int));
                //envoi des rangs aux processus dsm
-               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.rank, sizeof(int));
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[i].connect_info.rank, sizeof(int));
                //envoi des infos de connexion aux processus
-               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.port, sizeof(int));
-               send_msg(tab_sock_fd[j], (void *) &dsm_proc[j].connect_info.name, dsm_proc[j].connect_info.len_name);
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[i].connect_info.port, sizeof(int));
+               send_msg(tab_sock_fd[j], (void *) &dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.len_name);
             }
          }
-      }
-   */
+      }*/
+   
 
 
 
@@ -228,11 +236,20 @@ int main(int argc, char *argv[])
       handle_poll(fds, num_procs);
 
       /* on attend les processus fils */
-
+      int status;
+      pid_t   pid2;
+      while ( (pid2 = waitpid(-1, &status, WNOHANG)) > 0) {
+         printf("child %d terminated\n", pid2);
+      }
       /* on ferme les descripteurs proprement */
       for (i=0 ; i<2*num_procs; i++){
          close(fds[i].fd);
       }
+      /* Liberation de la memoire */   
+      /*free(positionEntree);
+      free(tab_machine_name);
+      free(argv_ssh);
+      free(dsmexec_port);*/
       /* on ferme la socket d'ecoute */
       close(sock_fd);
    }
