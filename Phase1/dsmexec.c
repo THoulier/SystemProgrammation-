@@ -21,11 +21,11 @@ void sigchld_handler(int sig)
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
    //printf("entree dans le handler\n");
-   /*int status;
+   int status;
    pid_t   pid;
    while ( (pid = waitpid(-1, &status, WNOHANG)) > 0) {
       printf("child %d terminated\n", pid);
-   }*/
+   }
 }
 
 
@@ -42,12 +42,13 @@ int main(int argc, char *argv[])
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
-      /*
+      
       struct sigaction sigchld_action;
       memset (&sigchld_action, 0, sizeof (sigchld_action));
+      sigchld_action.sa_flags = SA_RESTART; 
       sigchld_action.sa_handler = sigchld_handler;
       sigaction(SIGCHLD, &sigchld_action, NULL);
-      */
+      
       
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
@@ -135,11 +136,11 @@ int main(int argc, char *argv[])
             /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
-            close(fd_stdout[1]);
+            
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
-            close(fd_stderr[1]);
+            
             /* Creation du tableau d'arguments pour le ssh */
 
             getcwd(path,MSGLEN);
@@ -197,7 +198,6 @@ int main(int argc, char *argv[])
       //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.port, sizeof(int));
       recv_msg(client_fd, (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
 
-      //close(client_fd);
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
@@ -254,6 +254,7 @@ int main(int argc, char *argv[])
       free(dsmexec_port);*/
       free(tab_machine_name);
       /* on ferme la socket d'ecoute */
+
       close(sock_fd);
    }
    exit(EXIT_SUCCESS);

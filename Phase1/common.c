@@ -120,8 +120,14 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						while (ret != 0){
 							printf("Paquet n° %i :\n", paquet);
 							ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
+							printf("%d\n", ret);
+							/*if (errno == EINTR){
+								//perror("eintr");
+								ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
+								printf("%d\n", ret);
+							}*/
 							if (ret == -1){
-								perror("Error while reading\n");
+								perror("Error while reading");
 							} 
 
 							printf("%s", buff_stdout);
@@ -143,10 +149,14 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						printf("===================%i\n",i);
 
 						printf("----------------------------[Processus %i : STDERR]----------------------------\n", tab[i]);
-						while (ret != 0){
+						while (ret != 0 && errno != EINTR){
 							if ((ret = read(fds[i].fd, (void *)buff_stderr, MSGLEN)) > 0){
 								printf("%s", buff_stderr);
 							} 
+							/*if (errno == EINTR){
+								//perror("eintr");
+								ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
+							}*/
 
 							memset(buff_stderr,'\0',MSGLEN);
 						}

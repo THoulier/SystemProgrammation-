@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     fprintf(stderr,"arg[%i] : %s\n",1,argv[1]);
     fflush(stdout);
     fflush(stderr);
-    sleep(1);
+    sleep(5);
     //while(1);
     return 0;
 }
