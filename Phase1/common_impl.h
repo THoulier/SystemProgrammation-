@@ -14,7 +14,6 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <signal.h>
 
 /* autres includes (eventuellement) */
