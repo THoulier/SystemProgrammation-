@@ -3,11 +3,12 @@
 int main(int argc, char **argv)
 {
    char *pointer; 
-   char *current;
-   int value;
-
+   /*char *current;
+   int value;*/
+  printf("******************************HELLO WORLD\n");
+  fflush(stdout);
    pointer = dsm_init(argc,argv);
-   current = pointer;
+   /*current = pointer;
 
    printf("[%i] Coucou, mon adresse de base est : %p\n", DSM_NODE_ID, pointer);
    
@@ -25,6 +26,8 @@ int main(int argc, char **argv)
        value = *((int *)current);
        printf("[%i] valeur de l'entier : %i\n", DSM_NODE_ID, value);
      }
-   dsm_finalize();
+   dsm_finalize();*/
+   sleep(2);
+   
    return 1;
 }

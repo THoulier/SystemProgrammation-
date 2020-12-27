@@ -1,4 +1,5 @@
 #include "dsm.h"
+#include "common_impl.h"
 
 int DSM_NODE_NUM; /* nombre de processus dsm */
 int DSM_NODE_ID;  /* rang (= numero) du processus */ 
@@ -79,7 +80,7 @@ static void *dsm_comm_daemon( void *arg)
 	printf("[%i] Waiting for incoming reqs \n", DSM_NODE_ID);
 	sleep(2);
      }
-   return;
+   //return;
 }
 
 static int dsm_send(int dest,void *buf,size_t size)
@@ -138,17 +139,36 @@ char *dsm_init(int argc, char **argv)
 {   
    struct sigaction act;
    int index;   
-   
+   int sock_dsm;
+   int sock_dsmexec;
+   dsm_proc_t dsm_proc[2];  //tableau pour stocker les structures reçues
+
+   sock_dsmexec = atoi(argv[0]);
+   sock_dsm = atoi(argv[1]);
+   printf("%d et %d\n", sock_dsm, sock_dsmexec);
+   fflush(stdout);
+
    /* reception du nombre de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_NUM)*/
-   
+   recv_msg(sock_dsmexec,(void*) &DSM_NODE_NUM,sizeof(int));
+
    /* reception de mon numero de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_ID)*/
-   
+   recv_msg(sock_dsmexec,(void*) &DSM_NODE_ID,sizeof(int));
+
    /* reception des informations de connexion des autres */
    /* processus envoyees par le lanceur : */
    /* nom de machine, numero de port, etc. */
-   
+   //recv_msg(sock_dsmexec, (void *) &dsm_proc[0], sizeof(dsm_proc[0]));
+   //recv_msg(sock_dsmexec, (void *) &dsm_proc[1], sizeof(dsm_proc[1]));
+
+   for (int i=0; i<2;i++){
+      printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
+      fflush(stdout);
+   }
+
+   printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
+   fflush(stdout);
    /* initialisation des connexions */ 
    /* avec les autres processus : connect/accept */
    
