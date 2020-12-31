@@ -5,9 +5,9 @@ int main(int argc, char **argv)
    char *pointer; 
    /*char *current;
    int value;*/
-  printf("******************************HELLO WORLD\n");
-  fflush(stdout);
-   pointer = dsm_init(argc,argv);
+    printf("******************************HELLO WORLD\n");
+    fflush(stdout);
+    pointer = dsm_init(argc,argv);
    /*current = pointer;
 
    printf("[%i] Coucou, mon adresse de base est : %p\n", DSM_NODE_ID, pointer);
@@ -27,7 +27,9 @@ int main(int argc, char **argv)
        printf("[%i] valeur de l'entier : %i\n", DSM_NODE_ID, value);
      }
    dsm_finalize();*/
-   sleep(2);
+    sleep(1);
+    printf("******************************END\n");
+    fflush(stdout);
    
    return 1;
 }

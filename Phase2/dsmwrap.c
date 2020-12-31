@@ -37,6 +37,7 @@ int main(int argc, char **argv)
    /* connexions avec les autres processus dsm */
    sock_fd_distant = creer_socket(&port_num);
    sprintf(fd_dsm, "%i", sock_fd_distant);
+
    /* Envoi du numero de port au lanceur */
    /* pour qu'il le propage à tous les autres */
    /* processus dsm */
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
       printf("=======2========%s\n", new_argv[i]);
    }
    fflush(stdout);
-
+   
    execvp(argv[4],new_argv);
    
    close(sock_fd_dsmexec);

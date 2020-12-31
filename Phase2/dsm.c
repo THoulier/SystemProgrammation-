@@ -74,12 +74,12 @@ static void dsm_free_page( int numpage )
 
 static void *dsm_comm_daemon( void *arg)
 {  
-   while(1)
-     {
+   //while(1)
+     //{
 	/* a modifier */
-	printf("[%i] Waiting for incoming reqs \n", DSM_NODE_ID);
+	/*printf("[%i] Waiting for incoming reqs \n", DSM_NODE_ID);
 	sleep(2);
-     }
+     }*/
    //return;
 }
 
@@ -141,7 +141,6 @@ char *dsm_init(int argc, char **argv)
    int index;   
    int sock_dsm;
    int sock_dsmexec;
-   dsm_proc_t dsm_proc[2];  //tableau pour stocker les structures reçues
 
    sock_dsmexec = atoi(argv[0]);
    sock_dsm = atoi(argv[1]);
@@ -157,12 +156,30 @@ char *dsm_init(int argc, char **argv)
    recv_msg(sock_dsmexec,(void*) &DSM_NODE_ID,sizeof(int));
 
    /* reception des informations de connexion des autres */
-   /* processus envoyees par le lanceur : */
+   /* processus envoyeestab_sock_fd par le lanceur : */
    /* nom de machine, numero de port, etc. */
-   //recv_msg(sock_dsmexec, (void *) &dsm_proc[0], sizeof(dsm_proc[0]));
-   //recv_msg(sock_dsmexec, (void *) &dsm_proc[1], sizeof(dsm_proc[1]));
+   dsm_proc_t dsm_proc[DSM_NODE_NUM];  //tableau pour stocker les structures reçues
+   recv_msg(sock_dsmexec,(void*) &dsm_proc,sizeof(dsm_proc));
+   sleep(1);
+   for (int i=0; i<DSM_NODE_NUM; i++){
+      printf("i == %d et RANG == %d\n",i, DSM_NODE_ID);
+      fflush(stdout);
 
-   for (int i=0; i<2;i++){
+      if (dsm_proc[i].connect_info.rank < DSM_NODE_ID){
+         struct sockaddr_in client_addr;
+         socklen_t size_addr = sizeof(struct sockaddr_in);
+         int client_fd = accept(sock_dsm,(struct sockaddr*)&client_addr,&size_addr);
+         printf("fd du client qui s'est connecté : %d\n", client_fd);       
+         fflush(stdout);
+         
+      } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
+         handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
+         fflush(stdout);
+      }
+
+   }
+
+   for (int i=0; i<DSM_NODE_NUM;i++){
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       fflush(stdout);
    }

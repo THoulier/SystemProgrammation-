@@ -197,22 +197,27 @@ int main(int argc, char *argv[])
       //recv_msg(client_fd, (void *) &dsm_proc[i].connect_info.port, sizeof(int));
       recv_msg(client_fd, (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
 
+      //envoi du nombre de processus aux processus dsm
+      send_msg(client_fd, (void *) &num_procs, sizeof(int));
+      //envoi des rangs aux processus dsm
+      send_msg(client_fd, (void *) &dsm_proc[i].connect_info.rank, sizeof(int));
+
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
-      
-      for (i = 0; i < num_procs ; i++){
-         for (int j =0; j < num_procs ; j++){
-            if (i != j){
+      /*for (i = 0; i < num_procs ; i++){
+         for (int j = 0; j < num_procs ; j++){
+            if (j < dsm_proc[i].connect_info.rank){
                //envoi des infos de connexion aux processus
-               //send_msg(tab_sock_fd[j], (void *) &dsm_proc[i], sizeof(dsm_proc[i]));
-            } else {
-               //envoi du nombre de processus aux processus dsm
-               send_msg(tab_sock_fd[j], (void *) &num_procs, sizeof(int));
-               //envoi des rangs aux processus dsm
-               send_msg(tab_sock_fd[j], (void *) &dsm_proc[i].connect_info.rank, sizeof(int));
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
+            } else if (j > dsm_proc[i].connect_info.rank) {
+               //envoi des infos de connexion aux processus
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
             }
          }
+      }*/
+      for (i = 0; i < num_procs ; i++){
+         send_msg(tab_sock_fd[i], (void *) &dsm_proc, sizeof(dsm_proc));
       }
    
 
