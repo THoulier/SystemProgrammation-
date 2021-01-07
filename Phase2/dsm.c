@@ -120,6 +120,7 @@ static void dsm_handler( void* addr)
 {
    int page = address2num(addr);
    printf("page demandée: %i\n",page );
+   fflush(stdout);
 
 
    /*printf("[%i] FAULTY  ACCESS !!! \n",DSM_NODE_ID);
@@ -132,6 +133,7 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    /* A completer */
    /* adresse qui a provoque une erreur */
    printf("*******************a segfault has occured*******************\n");
+   fflush(stdout);
    void  *addr = info->si_addr;
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*

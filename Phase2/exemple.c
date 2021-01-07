@@ -4,13 +4,11 @@ int main(int argc, char **argv)
 {
    char *pointer;
    char *current;
-   char dummie[5];
    int value;
     printf("******************************HELLO WORLD\n");
     fflush(stdout);
     pointer = dsm_init(argc,argv);
    current = pointer;
-   dummie[6] = 7;
 
    printf("[%i] Coucou, mon adresse de base est : %p\n", DSM_NODE_ID, pointer);
 

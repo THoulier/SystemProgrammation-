@@ -32,7 +32,6 @@ void sigchld_handler(int sig)
 
 int main(int argc, char *argv[])
 {
-  printf("hello world\n");
    if (argc < 3){
       usage();
    } else {
@@ -107,12 +106,16 @@ int main(int argc, char *argv[])
 	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
 
       /* Initialisation des parametres du tableau argv */
-      int size_argv_ssh = 6;
-      char * argv_ssh[argc-2+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
+      int size_argv_ssh = 7;
+      char * argv_ssh[argc-3+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
       char path[MSGLEN];
       memset(path, 0, MSGLEN);
+      char path2[MSGLEN];
+      memset(path2, 0, MSGLEN);
       char rank[MSGLEN];
       memset(rank, 0, MSGLEN);
+      char prog[MSGLEN];
+      memset(prog, 0, MSGLEN);
       char dsmexec_machine_name[NAMELEN];
       memset(dsmexec_machine_name,0,NAMELEN);
       char * dsmexec_port = malloc(sizeof(*dsmexec_port));
@@ -146,7 +149,11 @@ int main(int argc, char *argv[])
             /* Creation du tableau d'arguments pour le ssh */
 
             getcwd(path,MSGLEN);
+            printf("path: %s\n",path );
+            strcpy(path2,path);
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
+            strcpy(prog,argv[2]);
+            sprintf(path2,"%s/bin/%s", path2,prog); //Contient le chemin vers le programme à exectuer sur la machine distante
             sprintf(rank, "%d", i);
 
             argv_ssh[0] = "ssh";
@@ -155,15 +162,13 @@ int main(int argc, char *argv[])
             argv_ssh[3] = dsmexec_machine_name;
             argv_ssh[4] = dsmexec_port;
             argv_ssh[5] = rank;
+            argv_ssh[6] = path2;
             for (int i = size_argv_ssh; i<argc+4+1; i++){
               argv_ssh[i] = argv[i-4];
             }
             /* jump to new prog : */
             if (execvp("ssh", argv_ssh) == -1){
               printf("can't lauch dsmwrap\n");
-            }
-            else {
-              printf("ssh lauched\n");
             }
 
          } else  if(pid > 0) { /* pere */
