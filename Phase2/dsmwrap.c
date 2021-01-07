@@ -11,6 +11,8 @@ int main(int argc, char **argv)
    dsm_proc_t dsm_proc;
    char fd_lanceur[MSGLEN];
    char fd_dsm[MSGLEN];
+   char path[MSGLEN];
+   memset(path, 0, MSGLEN);
    char ** new_argv =(char**) malloc((argc-4+2) * sizeof(char*));
    memset(fd_lanceur, 0, MSGLEN);
    memset(fd_dsm, 0, MSGLEN);
@@ -60,7 +62,7 @@ int main(int argc, char **argv)
    }
    fflush(stdout);
 
-   
+
    for (int i = 0;i<argc-4+2;i++){
      new_argv[i] = malloc(sizeof(**new_argv) * NAMELEN);
    }
@@ -74,10 +76,17 @@ int main(int argc, char **argv)
       printf("=======2========%s\n", new_argv[i]);
    }
    fflush(stdout);
-   
-   execvp(argv[4],new_argv);
-   
-   close(sock_fd_dsmexec);
 
+   /*getcwd(path,MSGLEN);
+   sprintf(path,"%s/bin", path);
+   printf("path: %s\n",path );
+   sprintf(argv[4],"%s/%s", path,argv[4]);
+   printf("exemple: %s\n",argv[4]); */
+
+   if ((execvp(argv[4],new_argv)) == -1){
+     printf("did not lauch program\n");
+   }
+
+   close(sock_fd_dsmexec);
    return 0;
 }

@@ -38,14 +38,15 @@ struct dsm_proc {
   pid_t pid;
   dsm_proc_conn_t connect_info;
 };
+
 typedef struct dsm_proc dsm_proc_t;
 
 int creer_socket(int * port_num);
 
 int handle_connect(char address_ip[], int portnb);
 
-ssize_t send_msg(int fd,void * buffer, int len);
+int send_msg(int fd,void * buffer, int len);
 
-ssize_t recv_msg(int fd,void * buffer, int len);
+int recv_msg(int fd,void * buffer, int len);
 
 void handle_poll(struct pollfd fds[], int num_procs);

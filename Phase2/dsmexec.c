@@ -6,6 +6,7 @@
 /* des processus dsm */
 dsm_proc_t *proc_array = NULL;
 
+
 /* le nombre de processus effectivement crees */
 volatile int num_procs_creat = 0;
 
@@ -31,6 +32,7 @@ void sigchld_handler(int sig)
 
 int main(int argc, char *argv[])
 {
+  printf("hello world\n");
    if (argc < 3){
       usage();
    } else {
@@ -42,14 +44,14 @@ int main(int argc, char *argv[])
 
       /* Mise en place d'un traitant pour recuperer les fils zombies*/
       /* XXX.sa_handler = sigchld_handler; */
-      
+
       struct sigaction sigchld_action;
       memset (&sigchld_action, 0, sizeof (sigchld_action));
-      sigchld_action.sa_flags = SA_RESTART; 
+      sigchld_action.sa_flags = SA_RESTART;
       sigchld_action.sa_handler = sigchld_handler;
       sigaction(SIGCHLD, &sigchld_action, NULL);
-      
-      
+
+
       /* lecture du fichier de machines */
       FILE * fichier = NULL;
       char buff[NAMELEN];
@@ -66,7 +68,7 @@ int main(int argc, char *argv[])
               num_procs++;// on ajoute + 1 à nombre de mots
           }
       }while(caractere != EOF);//lire jusqu'à la fin du fichier
-      printf("num proc %i\n",num_procs );
+      // printf("num proc %i\n",num_procs );
       rewind(fichier);
 
       /* 2- on recupere les noms des machines : le nom de */
@@ -96,6 +98,7 @@ int main(int argc, char *argv[])
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
+      printf("creer socket 1\n");
       sock_fd = creer_socket(&port_num);
 
 
@@ -103,7 +106,7 @@ int main(int argc, char *argv[])
       struct pollfd fds[2*num_procs]; //stdout + stderr pour chaque pipe
 	   memset(&fds, 0, 2*num_procs*sizeof(struct pollfd));
 
-      /* Initialisation des parametres du tableau argv */ 
+      /* Initialisation des parametres du tableau argv */
       int size_argv_ssh = 6;
       char * argv_ssh[argc-2+size_argv_ssh]; //tableau argv du programme qu'on va executer avec execv
       char path[MSGLEN];
@@ -125,21 +128,21 @@ int main(int argc, char *argv[])
          pipe(fd_stdout);
          /* creation du tube pour rediriger stderr */
          pipe(fd_stderr);
-         
+
          pid = fork();
 
          if(pid == -1) ERROR_EXIT("fork");
 
          if (pid == 0) { /* fils */
-            
-            /* redirection stdout */
+
+           /* redirection stdout */
             close(fd_stdout[0]);
             dup2(fd_stdout[1], STDOUT_FILENO);
-            
+
             /* redirection stderr */
             close(fd_stderr[0]);
             dup2(fd_stderr[1], STDERR_FILENO);
-            
+
             /* Creation du tableau d'arguments pour le ssh */
 
             getcwd(path,MSGLEN);
@@ -156,8 +159,12 @@ int main(int argc, char *argv[])
               argv_ssh[i] = argv[i-4];
             }
             /* jump to new prog : */
-            /* execvp("ssh",newargv); */
-            execvp("ssh", argv_ssh);
+            if (execvp("ssh", argv_ssh) == -1){
+              printf("can't lauch dsmwrap\n");
+            }
+            else {
+              printf("ssh lauched\n");
+            }
 
          } else  if(pid > 0) { /* pere */
             /* fermeture des extremites des tubes non utiles */
@@ -170,7 +177,7 @@ int main(int argc, char *argv[])
 
             fds[2*i+1].fd = fd_stderr[0]; //indice impair : on recupere les fds des stderr
             fds[2*i+1].events = POLLIN; //on initialise events à POLLIN
-         
+
             num_procs_creat++;
          }
       }
@@ -205,11 +212,21 @@ int main(int argc, char *argv[])
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
-      //envoie des informations de connexion aux processus dsm
+      /*for (i = 0; i < num_procs ; i++){
+         for (int j = 0; j < num_procs ; j++){
+            if (j < dsm_proc[i].connect_info.rank){
+               //envoi des infos de connexion aux processus
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
+            } else if (j > dsm_proc[i].connect_info.rank) {
+               //envoi des infos de connexion aux processus
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
+            }
+         }
+      }*/
       for (i = 0; i < num_procs ; i++){
          send_msg(tab_sock_fd[i], (void *) &dsm_proc, sizeof(dsm_proc));
       }
-   
+
 
 
 
@@ -242,7 +259,7 @@ int main(int argc, char *argv[])
       for (i=0 ; i<2*num_procs; i++){
          close(fds[i].fd);
       }
-      /* Liberation de la memoire */   
+      /* Liberation de la memoire */
       /*free(positionEntree);
       free(argv_ssh);
       free(dsmexec_port);*/

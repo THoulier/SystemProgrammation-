@@ -17,27 +17,40 @@
 
 typedef enum
 {
-   NO_ACCESS, 
+   NO_ACCESS,
    READ_ACCESS,
-   WRITE_ACCESS, 
-   UNKNOWN_ACCESS 
+   WRITE_ACCESS,
+   UNKNOWN_ACCESS
 } dsm_page_access_t;
 
 typedef enum
-{   
+{
    INVALID,
    READ_ONLY,
    WRITE,
-   NO_CHANGE  
+   NO_CHANGE
 } dsm_page_state_t;
+
+typedef enum
+{
+  REQUEST,
+  FREED,
+  UNAVAILABLE,
+} msg_type;
 
 typedef int dsm_page_owner_t;
 
 typedef struct
-{ 
+{
    dsm_page_state_t status;
    dsm_page_owner_t owner;
 } dsm_page_info_t;
+
+struct message {
+  msg_type type;
+  int page_nb;
+  dsm_page_owner_t owner;
+};
 
 dsm_page_info_t table_page[PAGE_NUMBER];
 
