@@ -71,23 +71,53 @@ int handle_connect(char address_ip[], int portnb) {
 }
 
 
-int send_msg(int fd, void * buffer, int len){
-	int ret = -1;
-	if ((ret = send(fd, buffer, len, 0)) < 0){
-		printf("Error while sending a message");
-		return 0;
-	}
-	return ret;
+
+ssize_t send_msg (int fd, void * buffer, int len){
+        ssize_t sent = 0;
+        do{
+            ssize_t ret = send(fd, buffer + sent, len - sent, 0);
+
+			if (ret != -1){
+				sent += ret;
+			}
+            else if (ret < 0){
+                if(errno == EINTR){//si appel system durant l'execution du send, on recommence
+                    continue;
+                } else {
+                    perror("Error while sending a messsage\n");
+				    break;
+                }
+            }
+        } while(sent != len);
+    return sent;
 }
 
-int recv_msg(int fd, void * buffer, int len){
-	int ret = -1;
-	if ((ret = recv(fd, buffer, len, 0)) < 0){
-		printf("Error while receiving a message");
-		return 0;
-	}
-	return ret;
+ssize_t recv_msg (int fd, void * buffer, int len){
+        ssize_t rec = 0;
+        do{
+            ssize_t ret = recv(fd, buffer + rec, len - rec, 0);
+
+			if (ret != -1){
+				rec += ret;
+			}
+            else if (ret < 0){
+                if(errno == EINTR){//si appel system durant l'execution du recv, on recommence
+                    continue;
+                } else {
+                    perror("Error while receiving a messsage\n");
+				    break;
+                }
+            }
+        	
+        } while(rec != len);
+    return rec;
 }
+
+
+
+
+
+
 /* Vous pouvez ecrire ici toutes les fonctions */
 /* qui pourraient etre utilisees par le lanceur */
 /* et le processus intermediaire. N'oubliez pas */
@@ -97,17 +127,25 @@ int recv_msg(int fd, void * buffer, int len){
 void handle_poll(struct pollfd fds[], int num_procs){
 	char buff_stdout[MSGLEN], buff_stderr[MSGLEN];
     memset(buff_stdout,'\0',MSGLEN), memset(buff_stderr,'\0',MSGLEN);
-	int tab[] = {0,0,1,1,2,2};
+
+	int tabi2rank[2*num_procs];
+	for (int j = 1; j<=2*num_procs; j=j+2){
+		tabi2rank[j-1] = j/2;
+		tabi2rank[j] = j/2;
+		printf("%d\n",j);
+	}
+
 	int paquet = 0;
 	int pipe_working = 2*num_procs;
 	int ret = -1;
+
 	while(pipe_working > 0)
 	{
 		int enabled = 0;
 		enabled = poll(fds,2*num_procs,-1);
 
 		if (enabled > 0){
-			//printf("enabled : %d\n", enabled);
+			
 			for (int i = 0; i < 2*num_procs; i++){
 				ret = -1;
 				if (i%2 == 0){
@@ -116,16 +154,12 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						paquet = 0;
 						printf("===================%i\n",i);
 
-						printf("----------------------------[Processus %i : STDOUT]----------------------------\n", tab[i]);
+						printf("----------------------------[Processus %i : STDOUT]----------------------------\n", tabi2rank[i]);
 						while (ret != 0){
-							printf("Paquet n° %i :\n", paquet);
+							//printf("Paquet n° %i :\n", paquet);
 							ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
-							printf("%d\n", ret);
-							/*if (errno == EINTR){
-								//perror("eintr");
-								ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
-								printf("%d\n", ret);
-							}*/
+							//printf("%d\n", ret);
+
 							if (ret == -1){
 								perror("Error while reading");
 							} 
@@ -134,7 +168,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 							paquet ++;
 							memset(buff_stdout,'\0',MSGLEN);
 						}
-						printf("----------------------------[END STDOUT %i]----------------------------\n", tab[i]);
+						printf("----------------------------[END STDOUT %i]----------------------------\n", tabi2rank[i]);
 						
 					} else if ((fds[i].revents == POLLHUP)){
 						printf("Connection ends stdout %i\n",i);
@@ -148,19 +182,16 @@ void handle_poll(struct pollfd fds[], int num_procs){
 					if (fds[i].revents == POLLIN){ //indices impairs = stderr
 						printf("===================%i\n",i);
 
-						printf("----------------------------[Processus %i : STDERR]----------------------------\n", tab[i]);
+						printf("----------------------------[Processus %i : STDERR]----------------------------\n", tabi2rank[i]);
 						while (ret != 0 && errno != EINTR){
+
 							if ((ret = read(fds[i].fd, (void *)buff_stderr, MSGLEN)) > 0){
 								printf("%s", buff_stderr);
 							} 
-							/*if (errno == EINTR){
-								//perror("eintr");
-								ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
-							}*/
 
 							memset(buff_stderr,'\0',MSGLEN);
 						}
-						printf("----------------------------[END STDERR %i]----------------------------\n", tab[i]);
+						printf("----------------------------[END STDERR %i]----------------------------\n", tabi2rank[i]);
 
 					} else if ((fds[i].revents == POLLHUP)){
 						printf("Connection ends stderr %i\n",i);

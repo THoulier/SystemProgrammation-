@@ -205,17 +205,7 @@ int main(int argc, char *argv[])
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
-      /*for (i = 0; i < num_procs ; i++){
-         for (int j = 0; j < num_procs ; j++){
-            if (j < dsm_proc[i].connect_info.rank){
-               //envoi des infos de connexion aux processus
-               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
-            } else if (j > dsm_proc[i].connect_info.rank) {
-               //envoi des infos de connexion aux processus
-               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
-            }
-         }
-      }*/
+      //envoie des informations de connexion aux processus dsm
       for (i = 0; i < num_procs ; i++){
          send_msg(tab_sock_fd[i], (void *) &dsm_proc, sizeof(dsm_proc));
       }

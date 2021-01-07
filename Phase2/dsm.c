@@ -160,7 +160,10 @@ char *dsm_init(int argc, char **argv)
    /* nom de machine, numero de port, etc. */
    dsm_proc_t dsm_proc[DSM_NODE_NUM];  //tableau pour stocker les structures reçues
    recv_msg(sock_dsmexec,(void*) &dsm_proc,sizeof(dsm_proc));
-   sleep(1);
+
+   /* initialisation des connexions */ 
+   /* avec les autres processus : connect/accept */
+  
    for (int i=0; i<DSM_NODE_NUM; i++){
       printf("i == %d et RANG == %d\n",i, DSM_NODE_ID);
       fflush(stdout);
@@ -186,8 +189,7 @@ char *dsm_init(int argc, char **argv)
 
    printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
    fflush(stdout);
-   /* initialisation des connexions */ 
-   /* avec les autres processus : connect/accept */
+
    
    /* Allocation des pages en tourniquet */
    for(index = 0; index < PAGE_NUMBER; index ++){	

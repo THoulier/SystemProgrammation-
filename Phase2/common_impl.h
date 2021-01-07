@@ -44,8 +44,8 @@ int creer_socket(int * port_num);
 
 int handle_connect(char address_ip[], int portnb);
 
-int send_msg(int fd,void * buffer, int len);
+ssize_t send_msg(int fd,void * buffer, int len);
 
-int recv_msg(int fd,void * buffer, int len);
+ssize_t recv_msg(int fd,void * buffer, int len);
 
 void handle_poll(struct pollfd fds[], int num_procs);
