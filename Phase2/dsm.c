@@ -77,9 +77,11 @@ static void *dsm_comm_daemon( void *arg)
 {
   struct message msg;
   memset(&msg, sizeof(msg),0);
-   while(1){
+   int pipe_working = DSM_NODE_NUM;
+   while(pipe_working > 0){
      printf("========================= dsm comm daemon ========================\n" );
    int enabled = 0;
+
    for (int i =0; i<DSM_NODE_NUM; i++){
      printf("processus: %i,with %i trought fd: %i \n",DSM_NODE_ID,i,DSM_POLL[i].fd );
    }
@@ -91,9 +93,11 @@ static void *dsm_comm_daemon( void *arg)
         if (i = DSM_NODE_ID){
           DSM_POLL[i].events = POLLIN;
           DSM_POLL[i].fd = -1;
+          pipe_working -= 1;
         }
         if (DSM_POLL[i].revents == POLLHUP){
           close(DSM_POLL[i].fd);
+          pipe_working -= 1;
           exit(EXIT_FAILURE);
         }
         if (DSM_POLL[i].revents == POLLIN){
@@ -119,16 +123,6 @@ static void *dsm_comm_daemon( void *arg)
     }
   }
    pthread_exit(NULL);
-}
-
-static int dsm_send(int dest,void *buf,size_t size)
-{
-   /* a completer */
-}
-
-static int dsm_recv(int from,void *buf,size_t size)
-{
-   /* a completer */
 }
 
 static void dsm_handler( void* addr)
@@ -158,10 +152,11 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    msg.page_nb = page;
    msg.owner = get_owner(page);
 
+   printf("================= SEGV HANDLER =================\n");
    printf("process %i requested page %i from owner: %i\n",DSM_NODE_ID,page,msg.owner);
    printf("sending him msg to fd: %d\n",DSM_POLL[msg.owner].fd );
    send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
-   sleep(2);
+   sleep(1);
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*
    #ifdef __x86_64__
@@ -282,6 +277,10 @@ void dsm_finalize( void )
 
    /* terminer correctement le thread de communication */
    /* pour le moment, on peut faire : */
+  /* void* return_value;
+   if (DSM_POLL != NULL){
+     pthread_join(dsm_comm_daemon,&return_value);
+   } */
    pthread_cancel(comm_daemon);
    free(DSM_POLL);
 
