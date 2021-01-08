@@ -76,28 +76,35 @@ static void dsm_free_page( int numpage )
 static void *dsm_comm_daemon( void *arg)
 {
   printf("comm daemon\n");
+  fflush(stdout);
   struct message msg;
   memset(&msg, sizeof(msg),0);
    while(1){
-   int enabled = 0;
+    int enabled = 0;
     enabled = poll(DSM_POLL,DSM_NODE_NUM,-1);
+    printf("------------------------------------------------------------------%d\n",DSM_NODE_NUM);
+    fflush(stdout);
     if (enabled > 0){
       for (int i = 0; i<DSM_NODE_NUM; i++){
+         printf("%d\n",i);
+         fflush(stdout);
         if (i = DSM_NODE_ID){
           DSM_POLL[i].events = POLLIN;
         }
         if (DSM_POLL[i].revents & POLLHUP){
-          close(DSM_POLL[i].fd);
-          exit(EXIT_FAILURE);
+          //close(DSM_POLL[i].fd);
+          //exit(EXIT_FAILURE);
         }
         if (DSM_POLL[i].revents == POLLIN){
           recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
           printf("msg received\n");
+          fflush(stdout);
           if (msg.type == REQUEST){
             dsm_free_page (msg.page_nb);
             msg.type == FREED;
             send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
             printf("msg sent\n");
+            fflush(stdout);
           }
           if (msg.type == FREED){
             dsm_alloc_page(msg.page_nb);
@@ -105,11 +112,13 @@ static void *dsm_comm_daemon( void *arg)
           }
           if (msg.type == UNAVAILABLE){
             printf("page unavailable\n");
+            fflush(stdout);
           }
         }
       }
     }
      }
+     pthread_exit(NULL);
 }
 
 static int dsm_send(int dest,void *buf,size_t size)
@@ -125,7 +134,7 @@ static int dsm_recv(int from,void *buf,size_t size)
 static void dsm_handler( void* addr)
 {
    int page = address2num(addr);
-   printf("page demandée: %i\n",page );
+   //printf("page demandée: %i\n",page );
    fflush(stdout);
 
 
@@ -138,7 +147,7 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
 {
    /* A completer */
    /* adresse qui a provoque une erreur */
-   printf("*******************a segfault has occured*******************\n");
+   //printf("*******************a segfault has occured*******************\n");
    fflush(stdout);
    void  *addr = info->si_addr;
    struct message msg;
@@ -148,8 +157,8 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    msg.type = REQUEST;
    msg.page_nb = page;
    msg.owner = get_owner(page);
-   printf("owner: %i\n",msg.owner);
-   printf("sending to fd: %d\n",DSM_POLL[msg.owner].fd );
+   //printf("owner: %i\n",msg.owner);
+   //printf("sending to fd: %d\n",DSM_POLL[msg.owner].fd );
    send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*
@@ -196,7 +205,7 @@ char *dsm_init(int argc, char **argv)
    /* par le lanceur de programmes (DSM_NODE_NUM)*/
    recv_msg(sock_dsmexec,(void*) &DSM_NODE_NUM,sizeof(int));
 
-  DSM_POLL = (struct pollfd*) malloc(sizeof(struct pollfd) *DSM_NODE_NUM);
+   DSM_POLL = (struct pollfd*) malloc(sizeof(struct pollfd) *DSM_NODE_NUM);
 
    /* reception de mon numero de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_ID)*/
@@ -223,7 +232,7 @@ char *dsm_init(int argc, char **argv)
 
       } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
          int fd = handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
-         DSM_POLL[DSM_NODE_ID].fd = fd;
+         DSM_POLL[dsm_proc[i].connect_info.rank].fd = fd;
          fflush(stdout);
       }
 
