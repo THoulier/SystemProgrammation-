@@ -116,8 +116,8 @@ static void *dsm_comm_daemon( void *arg)
           }
         }
       }
-    }
-     }
+   }
+   pthread_exit(NULL);
 }
 
 static int dsm_send(int dest,void *buf,size_t size)
@@ -133,7 +133,7 @@ static int dsm_recv(int from,void *buf,size_t size)
 static void dsm_handler( void* addr)
 {
    int page = address2num(addr);
-//   printf("page demandée: %i\n",page );
+   //printf("page demandée: %i\n",page );
    fflush(stdout);
 
 
@@ -146,7 +146,7 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
 {
    /* A completer */
    /* adresse qui a provoque une erreur */
-   printf("*******************a segfault has occured*******************\n");
+   //printf("*******************a segfault has occured*******************\n");
    fflush(stdout);
    void  *addr = info->si_addr;
    struct message msg;
@@ -199,14 +199,14 @@ char *dsm_init(int argc, char **argv)
 
    sock_dsmexec = atoi(argv[0]);
    sock_dsm = atoi(argv[1]);
-   printf("%d et %d\n", sock_dsm, sock_dsmexec);
-   fflush(stdout);
+   /*Debugprintf("%d et %d\n", sock_dsm, sock_dsmexec);
+   fflush(stdout);*/
 
    /* reception du nombre de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_NUM)*/
    recv_msg(sock_dsmexec,(void*) &DSM_NODE_NUM,sizeof(int));
 
-  DSM_POLL = (struct pollfd*) malloc(sizeof(struct pollfd) *DSM_NODE_NUM);
+   DSM_POLL = (struct pollfd*) malloc(sizeof(struct pollfd) *DSM_NODE_NUM);
 
    /* reception de mon numero de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_ID)*/
@@ -218,11 +218,13 @@ char *dsm_init(int argc, char **argv)
    dsm_proc_t dsm_proc[DSM_NODE_NUM];  //tableau pour stocker les structures reçues
    recv_msg(sock_dsmexec,(void*) &dsm_proc,sizeof(dsm_proc));
    sleep(1);
+   printf("===================================INTERCONNEXION=====================================");
+   fflush(stdout);
    for (int i=0; i<DSM_NODE_NUM; i++){
       printf("i == %d et RANG == %d\n",i, DSM_NODE_ID);
       fflush(stdout);
 
-      if (dsm_proc[i].connect_info.rank < DSM_NODE_ID){
+      if (dsm_proc[i].connect_info.rank < DSM_NODE_ID){ //si le process a un rang inferieur, on accepte la connexion
          struct sockaddr_in client_addr;
          socklen_t size_addr = sizeof(struct sockaddr_in);
          int client_fd = accept(sock_dsm,(struct sockaddr*)&client_addr,&size_addr);
@@ -231,21 +233,24 @@ char *dsm_init(int argc, char **argv)
          printf("user; %i, fd: %i\n",DSM_NODE_ID,client_fd );
          DSM_POLL[dsm_proc[i].connect_info.rank].fd = client_fd;
 
-      } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
+      } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){ //si le process a un rang superieur, on se connecte
          int fd = handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
-         DSM_POLL[dsm_proc[i].connect_info.rank ].fd = fd;
+         DSM_POLL[dsm_proc[i].connect_info.rank].fd = fd;
          fflush(stdout);
       }
 
    }
 
-   for (int i=0; i<DSM_NODE_NUM;i++){
+   for (int i=0; i<DSM_NODE_NUM;i++){//Affichage infos de connexions reçues
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       fflush(stdout);
    }
-
-   printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
+   printf("===================================INTERCONNEXION DONE=====================================");
    fflush(stdout);
+   /*Debug
+   printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
+   fflush(stdout);*/
+
    /* initialisation des connexions */
    /* avec les autres processus : connect/accept */
 
