@@ -31,6 +31,7 @@ typedef enum
    NO_CHANGE
 } dsm_page_state_t;
 
+// Type message lors de la requête de demande d'accès à une page
 typedef enum
 {
   REQUEST,

@@ -105,8 +105,10 @@ static void *dsm_comm_daemon( void *arg)
           fflush(stdout);
           recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
           if (msg.type == REQUEST){
+            // On reçoit la demande d'accès du processus qui veut utiliser la page
             dsm_free_page (msg.page_nb);
             msg.type == FREED;
+            // On confirme que la page est accessible
             send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
             printf("---------------------------msg sent-------------------------\n");
             fflush(stdout);
@@ -116,6 +118,7 @@ static void *dsm_comm_daemon( void *arg)
             dsm_change_info(msg.page_nb, table_page[msg.page_nb].status, table_page[msg.page_nb].owner );
           }
           if (msg.type == UNAVAILABLE){
+            // La page n'a pas pû être libérée
             printf("page unavailable\n");
           }
         }
