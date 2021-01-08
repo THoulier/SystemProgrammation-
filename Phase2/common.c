@@ -142,9 +142,9 @@ void handle_poll(struct pollfd fds[], int num_procs){
 					if (fds[i].revents ==  POLLIN){ //indices pairs = stdout
 						memset(buff_stdout,'\0',MSGLEN);
 
-						printf("===================%i\n",i);
+						//printf("===================%i\n",i);
 
-						printf("----------------------------[Processus %i : STDOUT]----------------------------\n", tabi2rank[i]);
+						printf("\n\n----------------------------[Processus %i : STDOUT]----------------------------\n", tabi2rank[i]);
 						while (ret != 0){ //recuperer des msgs de toutes tailles
 
 							ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
@@ -170,7 +170,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 					if (fds[i].revents == POLLIN){ //indices impairs = stderr
 						printf("===================%i\n",i);
 
-						printf("----------------------------[Processus %i : STDERR]----------------------------\n", tabi2rank[i]);
+						printf("\n\n----------------------------[Processus %i : STDERR]----------------------------\n", tabi2rank[i]);
 						while (ret != 0 && errno != EINTR){
 							if ((ret = read(fds[i].fd, (void *)buff_stderr, MSGLEN)) > 0){
 								printf("%s", buff_stderr);

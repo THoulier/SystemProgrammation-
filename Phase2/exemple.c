@@ -26,8 +26,8 @@ int main(int argc, char **argv)
        value = *((int *)current);
        printf("[%i] valeur de l'entier : %i\n", DSM_NODE_ID, value);
      }
-   dsm_finalize();
-    sleep(1);
+    dsm_finalize();
+    sleep(2);
     printf("----------------------FIN EXEMPLE-------------------------\n");
     fflush(stdout);
    return 1;
