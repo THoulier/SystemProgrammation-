@@ -75,6 +75,7 @@ static void dsm_free_page( int numpage )
 
 static void *dsm_comm_daemon( void *arg)
 {
+  printf("comm daemon\n");
   struct message msg;
   memset(&msg, sizeof(msg),0);
    while(1){
@@ -82,16 +83,21 @@ static void *dsm_comm_daemon( void *arg)
     enabled = poll(DSM_POLL,DSM_NODE_NUM,-1);
     if (enabled > 0){
       for (int i = 0; i<DSM_NODE_NUM; i++){
+        if (i = DSM_NODE_ID){
+          DSM_POLL[i].events = POLLIN;
+        }
         if (DSM_POLL[i].revents & POLLHUP){
           close(DSM_POLL[i].fd);
           exit(EXIT_FAILURE);
         }
         if (DSM_POLL[i].revents == POLLIN){
           recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
+          printf("msg received\n");
           if (msg.type == REQUEST){
             dsm_free_page (msg.page_nb);
             msg.type == FREED;
             send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
+            printf("msg sent\n");
           }
           if (msg.type == FREED){
             dsm_alloc_page(msg.page_nb);
@@ -135,6 +141,16 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    printf("*******************a segfault has occured*******************\n");
    fflush(stdout);
    void  *addr = info->si_addr;
+   struct message msg;
+   memset(&msg, sizeof(msg),0);
+   int page = address2num(addr);
+
+   msg.type = REQUEST;
+   msg.page_nb = page;
+   msg.owner = get_owner(page);
+   printf("owner: %i\n",msg.owner);
+   printf("sending to fd: %d\n",DSM_POLL[msg.owner].fd );
+   send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*
    #ifdef __x86_64__
@@ -202,10 +218,12 @@ char *dsm_init(int argc, char **argv)
          int client_fd = accept(sock_dsm,(struct sockaddr*)&client_addr,&size_addr);
          printf("fd du client qui s'est connecté : %d\n", client_fd);
          fflush(stdout);
+         printf("user; %i, fd: %i\n",DSM_NODE_ID,client_fd );
          DSM_POLL[DSM_NODE_ID].fd = client_fd;
 
       } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
-         handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
+         int fd = handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
+         DSM_POLL[DSM_NODE_ID].fd = fd;
          fflush(stdout);
       }
 

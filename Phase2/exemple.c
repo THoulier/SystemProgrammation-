@@ -20,7 +20,7 @@ int main(int argc, char **argv)
      }
    else if (DSM_NODE_ID == 1)
      {
-       current += PAGE_SIZE;
+       current += 2*PAGE_SIZE;
        current += 16*sizeof(int);
 
        value = *((int *)current);

@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
             /* Creation du tableau d'arguments pour le ssh */
 
             getcwd(path,MSGLEN);
-            printf("path: %s\n",path );
             strcpy(path2,path);
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
             strcpy(prog,argv[2]);
