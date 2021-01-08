@@ -168,7 +168,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 				} else if (i%2 != 0){
 					memset(buff_stderr,'\0',MSGLEN);
 					if (fds[i].revents == POLLIN){ //indices impairs = stderr
-						printf("===================%i\n",i);
+						//printf("===================%i\n",i);
 
 						printf("\n\n----------------------------[Processus %i : STDERR]----------------------------\n", tabi2rank[i]);
 						while (ret != 0 && errno != EINTR){

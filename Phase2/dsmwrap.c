@@ -24,8 +24,8 @@ int main(int argc, char **argv)
    /* necessaires pour la phase dsm_init */
    sock_fd_dsmexec = handle_connect(argv[1], atoi(argv[2]));
    sprintf(fd_lanceur, "%i", sock_fd_dsmexec);
+   
    /* Envoi du nom de machine au lanceur */
-
    gethostname(machine_name, NAMELEN);
    len_machine_name = strlen(machine_name)+1;
 

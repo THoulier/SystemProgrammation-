@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
       /* creation de la socket d'ecoute */
       /* + ecoute effective */
-
+      printf("creer socket 1\n");
       sock_fd = creer_socket(&port_num);
 
 
@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
             /* Creation du tableau d'arguments pour le ssh */
 
             getcwd(path,MSGLEN);
+            printf("path: %s\n",path );
             strcpy(path2,path);
             sprintf(path,"%s/bin/dsmwrap", path); //Contient le chemin de dsmwrap
             strcpy(prog,argv[2]);
@@ -189,7 +190,6 @@ int main(int argc, char *argv[])
       /* Initialisation du tableau de structures qui va contenir les informations sur les processus */
       dsm_proc_t dsm_proc[num_procs];  //tableau pour stocker les structures reçues
       int tab_sock_fd[num_procs]; //tableau pour stocker les sockets des processus distants
-
       for(i = 0; i < num_procs ; i++){
       /* on accepte les connexions des processus dsm */
       struct sockaddr_in client_addr;
@@ -217,21 +217,41 @@ int main(int argc, char *argv[])
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       }
 
-      /*Envoie des infos de connexions aux autres processus*/
+      /*for (i = 0; i < num_procs ; i++){
+         for (int j = 0; j < num_procs ; j++){
+            if (j < dsm_proc[i].connect_info.rank){
+               //envoi des infos de connexion aux processus
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
+            } else if (j > dsm_proc[i].connect_info.rank) {
+               //envoi des infos de connexion aux processus
+               send_msg(tab_sock_fd[i], (void *) &dsm_proc[j], sizeof(dsm_proc[j]));
+            }
+         }
+      }*/
       for (i = 0; i < num_procs ; i++){
          send_msg(tab_sock_fd[i], (void *) &dsm_proc, sizeof(dsm_proc));
       }
 
 
-      /*Debug
+
+
+
+      /* gestion des E/S : on recupere les caracteres */
+      /* sur les tubes de redirection de stdout/stderr */
+      /* while(1)
+            {
+               je recupere les infos sur les tubes de redirection
+               jusqu'à ce qu'ils soient inactifs (ie fermes par les
+               processus dsm ecrivains de l'autre cote ...)
+
+            };
+         */
+
       for (int i = 0; i<2*num_procs; i++){
             printf("fds %i : %i\n",i,fds[i].fd);
       }
 
-      printf("nb process : %d\n", num_procs);*/
-
-      /* gestion des E/S : on recupere les caracteres */
-      /* sur les tubes de redirection de stdout/stderr */
+      printf("nb process : %d\n", num_procs);
       handle_poll(fds, num_procs);
 
       /* on attend les processus fils */
@@ -245,8 +265,9 @@ int main(int argc, char *argv[])
          close(fds[i].fd);
       }
       /* Liberation de la memoire */
- 
-      free(dsmexec_port);
+      /*free(positionEntree);
+      free(argv_ssh);
+      free(dsmexec_port);*/
       free(tab_machine_name);
       /* on ferme la socket d'ecoute */
 
