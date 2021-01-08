@@ -30,8 +30,5 @@ int main(int argc, char **argv)
     sleep(1);
     printf("----------------------FIN EXEMPLE-------------------------\n");
     fflush(stdout);
-    while(1){
-      sleep(1);
-    }
    return 1;
 }

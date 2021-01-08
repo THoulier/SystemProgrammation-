@@ -127,8 +127,19 @@ static void *dsm_comm_daemon( void *arg)
 
 static void dsm_handler( void* addr)
 {
+  struct message msg;
+  memset(&msg, sizeof(msg),0);
    int page = address2num(addr);
    //printf("page demandée: %i\n",page );
+   msg.type = REQUEST;
+   msg.page_nb = page;
+   msg.owner = get_owner(page);
+
+   printf("================= SEGV HANDLER =================\n");
+   printf("process %i requested page %i from owner: %i\n",DSM_NODE_ID,page,msg.owner);
+   printf("sending him msg to fd: %d\n",DSM_POLL[msg.owner].fd );
+   send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
+   sleep(1);
    fflush(stdout);
 
 
@@ -142,21 +153,11 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    /* A completer */
    /* adresse qui a provoque une erreur */
    //printf("*******************a segfault has occured*******************\n");
-   fflush(stdout);
+   //fflush(stdout);
    void  *addr = info->si_addr;
-   struct message msg;
-   memset(&msg, sizeof(msg),0);
-   int page = address2num(addr);
 
-   msg.type = REQUEST;
-   msg.page_nb = page;
-   msg.owner = get_owner(page);
 
-   printf("================= SEGV HANDLER =================\n");
-   printf("process %i requested page %i from owner: %i\n",DSM_NODE_ID,page,msg.owner);
-   printf("sending him msg to fd: %d\n",DSM_POLL[msg.owner].fd );
-   send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
-   sleep(1);
+
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*
    #ifdef __x86_64__
