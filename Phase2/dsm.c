@@ -116,7 +116,8 @@ static void *dsm_comm_daemon( void *arg)
           }
         }
       }
-   }
+    }
+  }
    pthread_exit(NULL);
 }
 
@@ -218,7 +219,7 @@ char *dsm_init(int argc, char **argv)
    dsm_proc_t dsm_proc[DSM_NODE_NUM];  //tableau pour stocker les structures reçues
    recv_msg(sock_dsmexec,(void*) &dsm_proc,sizeof(dsm_proc));
    sleep(1);
-   printf("===================================INTERCONNEXION=====================================");
+   printf("===================================INTERCONNEXION=====================================\n");
    fflush(stdout);
    for (int i=0; i<DSM_NODE_NUM; i++){
       printf("i == %d et RANG == %d\n",i, DSM_NODE_ID);
@@ -245,7 +246,7 @@ char *dsm_init(int argc, char **argv)
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       fflush(stdout);
    }
-   printf("===================================INTERCONNEXION DONE=====================================");
+   printf("===================================INTERCONNEXION DONE=====================================\n");
    fflush(stdout);
    /*Debug
    printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
