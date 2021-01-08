@@ -80,5 +80,6 @@ int main(int argc, char **argv)
    }
 
    close(sock_fd_dsmexec);
+   free(new_argv);
    return 0;
 }

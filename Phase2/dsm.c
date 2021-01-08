@@ -75,29 +75,37 @@ static void dsm_free_page( int numpage )
 
 static void *dsm_comm_daemon( void *arg)
 {
-  printf("comm daemon\n");
   struct message msg;
   memset(&msg, sizeof(msg),0);
    while(1){
+     printf("========================= dsm comm daemon ========================\n" );
    int enabled = 0;
+   for (int i =0; i<DSM_NODE_NUM; i++){
+     printf("processus: %i,with %i trought fd: %i \n",DSM_NODE_ID,i,DSM_POLL[i].fd );
+   }
     enabled = poll(DSM_POLL,DSM_NODE_NUM,-1);
+    printf("enabled =  %i\n",enabled );
+    fflush(stdout);
     if (enabled > 0){
       for (int i = 0; i<DSM_NODE_NUM; i++){
         if (i = DSM_NODE_ID){
           DSM_POLL[i].events = POLLIN;
+          DSM_POLL[i].fd = -1;
         }
-        if (DSM_POLL[i].revents & POLLHUP){
+        if (DSM_POLL[i].revents == POLLHUP){
           close(DSM_POLL[i].fd);
           exit(EXIT_FAILURE);
         }
         if (DSM_POLL[i].revents == POLLIN){
+          printf("----------------------msg received-----------------------\n");
+          fflush(stdout);
           recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
-          printf("msg received\n");
           if (msg.type == REQUEST){
             dsm_free_page (msg.page_nb);
             msg.type == FREED;
             send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
-            printf("msg sent\n");
+            printf("---------------------------msg sent-------------------------\n");
+            fflush(stdout);
           }
           if (msg.type == FREED){
             dsm_alloc_page(msg.page_nb);
@@ -125,7 +133,7 @@ static int dsm_recv(int from,void *buf,size_t size)
 static void dsm_handler( void* addr)
 {
    int page = address2num(addr);
-   printf("page demandée: %i\n",page );
+//   printf("page demandée: %i\n",page );
    fflush(stdout);
 
 
@@ -148,9 +156,11 @@ static void segv_handler(int sig, siginfo_t *info, void *context)
    msg.type = REQUEST;
    msg.page_nb = page;
    msg.owner = get_owner(page);
-   printf("owner: %i\n",msg.owner);
-   printf("sending to fd: %d\n",DSM_POLL[msg.owner].fd );
+
+   printf("process %i requested page %i from owner: %i\n",DSM_NODE_ID,page,msg.owner);
+   printf("sending him msg to fd: %d\n",DSM_POLL[msg.owner].fd );
    send_msg(DSM_POLL[msg.owner].fd, (void*) &msg, sizeof(msg));
+   sleep(2);
   /* Si ceci ne fonctionne pas, utiliser a la place :*/
   /*
    #ifdef __x86_64__
@@ -219,11 +229,11 @@ char *dsm_init(int argc, char **argv)
          printf("fd du client qui s'est connecté : %d\n", client_fd);
          fflush(stdout);
          printf("user; %i, fd: %i\n",DSM_NODE_ID,client_fd );
-         DSM_POLL[DSM_NODE_ID].fd = client_fd;
+         DSM_POLL[dsm_proc[i].connect_info.rank].fd = client_fd;
 
       } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
          int fd = handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
-         DSM_POLL[DSM_NODE_ID].fd = fd;
+         DSM_POLL[dsm_proc[i].connect_info.rank ].fd = fd;
          fflush(stdout);
       }
 
@@ -267,6 +277,7 @@ void dsm_finalize( void )
    /* terminer correctement le thread de communication */
    /* pour le moment, on peut faire : */
    pthread_cancel(comm_daemon);
+   free(DSM_POLL);
 
   return;
 }
