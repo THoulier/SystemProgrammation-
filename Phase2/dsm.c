@@ -75,50 +75,49 @@ static void dsm_free_page( int numpage )
 
 static void *dsm_comm_daemon( void *arg)
 {
-  printf("comm daemon\n");
-  fflush(stdout);
-  struct message msg;
-  memset(&msg, sizeof(msg),0);
+   printf("comm daemon\n");
+   fflush(stdout);
+   struct message msg;
+   memset(&msg, sizeof(msg),0);
    while(1){
-    int enabled = 0;
-    enabled = poll(DSM_POLL,DSM_NODE_NUM,-1);
-    printf("------------------------------------------------------------------%d\n",DSM_NODE_NUM);
-    fflush(stdout);
-    if (enabled > 0){
-      for (int i = 0; i<DSM_NODE_NUM; i++){
-         printf("%d\n",i);
-         fflush(stdout);
-        if (i = DSM_NODE_ID){
-          DSM_POLL[i].events = POLLIN;
-        }
-        if (DSM_POLL[i].revents & POLLHUP){
-          //close(DSM_POLL[i].fd);
-          //exit(EXIT_FAILURE);
-        }
-        if (DSM_POLL[i].revents == POLLIN){
-          recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
-          printf("msg received\n");
-          fflush(stdout);
-          if (msg.type == REQUEST){
-            dsm_free_page (msg.page_nb);
-            msg.type == FREED;
-            send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
-            printf("msg sent\n");
-            fflush(stdout);
-          }
-          if (msg.type == FREED){
-            dsm_alloc_page(msg.page_nb);
-            dsm_change_info(msg.page_nb, table_page[msg.page_nb].status, table_page[msg.page_nb].owner );
-          }
-          if (msg.type == UNAVAILABLE){
-            printf("page unavailable\n");
-            fflush(stdout);
-          }
-        }
+      int enabled = 0;
+      enabled = poll(DSM_POLL,DSM_NODE_NUM,-1);
+      printf("------------------------------------------------------------------%d\n",DSM_NODE_NUM);
+      fflush(stdout);
+      if (enabled > 0){
+         for (int i = 0; i<DSM_NODE_NUM; i++){
+
+            if (i = DSM_NODE_ID){
+               DSM_POLL[i].events = POLLIN;
+            }
+            if (DSM_POLL[i].revents & POLLHUP){
+               //close(DSM_POLL[i].fd);
+               //exit(EXIT_FAILURE);
+            }
+            if (DSM_POLL[i].revents == POLLIN){
+               recv_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
+               printf("msg received\n");
+               fflush(stdout);
+               if (msg.type == REQUEST){
+                  dsm_free_page (msg.page_nb);
+                  msg.type == FREED;
+                  send_msg(DSM_POLL[i].fd, (void*) &msg, sizeof(msg));
+                  printf("msg sent\n");
+                  fflush(stdout);
+               }
+               if (msg.type == FREED){
+                  dsm_alloc_page(msg.page_nb);
+                  dsm_change_info(msg.page_nb, table_page[msg.page_nb].status, table_page[msg.page_nb].owner );
+               }
+               if (msg.type == UNAVAILABLE){
+                  printf("page unavailable\n");
+                  fflush(stdout);
+               }
+            }
+         }
       }
-    }
-     }
-     pthread_exit(NULL);
+   }
+   pthread_exit(NULL);
 }
 
 static int dsm_send(int dest,void *buf,size_t size)
@@ -198,8 +197,8 @@ char *dsm_init(int argc, char **argv)
 
    sock_dsmexec = atoi(argv[0]);
    sock_dsm = atoi(argv[1]);
-   printf("%d et %d\n", sock_dsm, sock_dsmexec);
-   fflush(stdout);
+   /*Debugprintf("%d et %d\n", sock_dsm, sock_dsmexec);
+   fflush(stdout);*/
 
    /* reception du nombre de processus dsm envoye */
    /* par le lanceur de programmes (DSM_NODE_NUM)*/
@@ -217,11 +216,13 @@ char *dsm_init(int argc, char **argv)
    dsm_proc_t dsm_proc[DSM_NODE_NUM];  //tableau pour stocker les structures reçues
    recv_msg(sock_dsmexec,(void*) &dsm_proc,sizeof(dsm_proc));
    sleep(1);
+   printf("===================================INTERCONNEXION=====================================");
+   fflush(stdout);
    for (int i=0; i<DSM_NODE_NUM; i++){
       printf("i == %d et RANG == %d\n",i, DSM_NODE_ID);
       fflush(stdout);
 
-      if (dsm_proc[i].connect_info.rank < DSM_NODE_ID){
+      if (dsm_proc[i].connect_info.rank < DSM_NODE_ID){ //si le process a un rang inferieur, on accepte la connexion
          struct sockaddr_in client_addr;
          socklen_t size_addr = sizeof(struct sockaddr_in);
          int client_fd = accept(sock_dsm,(struct sockaddr*)&client_addr,&size_addr);
@@ -230,7 +231,7 @@ char *dsm_init(int argc, char **argv)
          printf("user; %i, fd: %i\n",DSM_NODE_ID,client_fd );
          DSM_POLL[DSM_NODE_ID].fd = client_fd;
 
-      } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){
+      } else if (dsm_proc[i].connect_info.rank > DSM_NODE_ID){ //si le process a un rang superieur, on se connecte
          int fd = handle_connect(dsm_proc[i].connect_info.name, dsm_proc[i].connect_info.port);
          DSM_POLL[dsm_proc[i].connect_info.rank].fd = fd;
          fflush(stdout);
@@ -238,13 +239,16 @@ char *dsm_init(int argc, char **argv)
 
    }
 
-   for (int i=0; i<DSM_NODE_NUM;i++){
+   for (int i=0; i<DSM_NODE_NUM;i++){//Affichage infos de connexions reçues
       printf("Processus %i / rank : %i : machine : %s ; pid : %d ; len : %i ; port : %i\n", i, dsm_proc[i].connect_info.rank, dsm_proc[i].connect_info.name, dsm_proc[i].pid, dsm_proc[i].connect_info.len_name, dsm_proc[i].connect_info.port);
       fflush(stdout);
    }
-
-   printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
+   printf("===================================INTERCONNEXION DONE=====================================");
    fflush(stdout);
+   /*Debug
+   printf("______________%d et %d_______________\n", DSM_NODE_ID, DSM_NODE_NUM);
+   fflush(stdout);*/
+
    /* initialisation des connexions */
    /* avec les autres processus : connect/accept */
 

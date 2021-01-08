@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
    /* on execute la bonne commande */
    for (int i =0; i< argc; i++){
-      printf("========1=======%s\n", argv[i]);
+      printf("========ANCIEN ARGV=======%s\n", argv[i]);
    }
    fflush(stdout);
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
      new_argv[i+2] = argv[i+5];
    }
    for (int i =0; i< argc-5+2; i++){
-      printf("=======2========%s\n", new_argv[i]);
+      printf("=======ARGV NETTOYE========%s\n", new_argv[i]);
    }
    fflush(stdout);
 

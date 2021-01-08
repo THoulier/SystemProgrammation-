@@ -121,11 +121,10 @@ void handle_poll(struct pollfd fds[], int num_procs){
 	char buff_stdout[MSGLEN], buff_stderr[MSGLEN];
     memset(buff_stdout,'\0',MSGLEN), memset(buff_stderr,'\0',MSGLEN);
 
-	int tabi2rank[2*num_procs];
+	int tabi2rank[2*num_procs]; //tableau conversion i vers le rang
 	for (int j = 1; j<=2*num_procs; j=j+2){
 		tabi2rank[j-1] = j/2;
 		tabi2rank[j] = j/2;
-		printf("%d\n",j);
 	}
 
 	int pipe_working = 2*num_procs;
@@ -136,7 +135,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 		enabled = poll(fds,2*num_procs,-1);
 
 		if (enabled > 0){
-			//printf("enabled : %d\n", enabled);
+			
 			for (int i = 0; i < 2*num_procs; i++){
 				ret = -1;
 				if (i%2 == 0){
@@ -146,7 +145,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						printf("===================%i\n",i);
 
 						printf("----------------------------[Processus %i : STDOUT]----------------------------\n", tabi2rank[i]);
-						while (ret != 0){
+						while (ret != 0){ //recuperer des msgs de toutes tailles
 							
 							ret = read(fds[i].fd, (void *)buff_stdout, MSGLEN);
 
@@ -159,7 +158,7 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						}
 						printf("----------------------------[END STDOUT %i]----------------------------\n", tabi2rank[i]);
 						
-					} else if ((fds[i].revents == POLLHUP)){
+					} else if ((fds[i].revents == POLLHUP)){ //si fin de connexion
 						printf("Connection ends stdout %i\n",i);
 						pipe_working--;
 						fds[i].fd = -1;
@@ -188,7 +187,6 @@ void handle_poll(struct pollfd fds[], int num_procs){
 						close(fds[i].fd);
 					}
 				}
-				//printf("i : %i\n",i);
 				
 			}
 		}

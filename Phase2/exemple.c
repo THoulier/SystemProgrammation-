@@ -5,7 +5,7 @@ int main(int argc, char **argv)
    char *pointer;
    char *current;
    int value;
-    printf("******************************HELLO WORLD\n");
+    printf("----------------------DEBUT EXEMPLE-------------------------\n");
     fflush(stdout);
     pointer = dsm_init(argc,argv);
    current = pointer;
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
      }
    dsm_finalize();
     sleep(1);
-    printf("******************************END\n");
+    printf("----------------------FIN EXEMPLE-------------------------\n");
     fflush(stdout);
 
    return 1;
