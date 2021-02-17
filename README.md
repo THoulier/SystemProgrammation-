@@ -24,6 +24,4 @@ To launch the game, execute the next command line in a terminal :
 The machine_file contains the name of the machine which will be used for the parallel execution of the program example.
 The arguments arg1, arg2 ... can be added to complete the execution of the example file. 
 
-Usage
-------------
 
